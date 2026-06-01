@@ -1,0 +1,74 @@
+## ── .NET ────────────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+nuget.config
+
+# Publish output
+**/publish/
+**/PublishProfiles/
+
+# dotnet secrets
+**/secrets.json
+**/appsettings.*.local.json
+
+## ── Test results ────────────────────────────────────────────────────────────
+TestResults/
+coverage/
+*.trx
+*.coveragexml
+*.coverage
+
+## ── Docker ──────────────────────────────────────────────────────────────────
+# Keep docker-compose.yml but ignore overrides with real secrets
+docker-compose.override.yml
+
+## ── Visual Studio ────────────────────────────────────────────────────────────
+.vs/
+*.rsuser
+*.vscode/settings.json
+*.vscode/tasks.json
+*.vscode/launch.json
+*.vscode/extensions.json
+.vscode/**
+
+# VS Code - allow recommended extensions file only
+!.vscode/extensions.json
+
+## ── JetBrains Rider ─────────────────────────────────────────────────────────
+.idea/
+*.sln.iml
+
+## ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+## ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+## ── Environment / secrets ────────────────────────────────────────────────────
+# appsettings.Development.json tem credenciais locais reais — não subir
+**/appsettings.Development.json
+.env
+.env.local
+.env.*.local

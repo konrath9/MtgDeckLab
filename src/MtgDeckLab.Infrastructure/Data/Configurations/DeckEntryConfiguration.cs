@@ -1,0 +1,23 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using MtgDeckLab.Domain.Entities;
+
+namespace MtgDeckLab.Infrastructure.Data.Configurations;
+
+public class DeckEntryConfiguration : IEntityTypeConfiguration<DeckEntry>
+{
+    public void Configure(EntityTypeBuilder<DeckEntry> builder)
+    {
+        builder.ToTable("deck_entries");
+
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Id).HasColumnName("id");
+        builder.Property(e => e.DeckId).HasColumnName("deck_id");
+        builder.Property(e => e.CardId).HasColumnName("card_id");
+        builder.Property(e => e.Quantity).HasColumnName("quantity");
+        builder.Property(e => e.IsCommander).HasColumnName("is_commander");
+        builder.Property(e => e.IsSideboard).HasColumnName("is_sideboard");
+
+        builder.HasIndex(e => new { e.DeckId, e.CardId, e.IsCommander, e.IsSideboard }).IsUnique();
+    }
+}
