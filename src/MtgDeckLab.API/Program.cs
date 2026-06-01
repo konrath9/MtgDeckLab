@@ -29,3 +29,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Expõe Program para WebApplicationFactory nos testes de integração
+public partial class Program { }
