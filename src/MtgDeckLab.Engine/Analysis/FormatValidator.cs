@@ -42,6 +42,27 @@ public static class FormatValidator
                 errors.Add($"'{cmd.CardName}' must be a creature or planeswalker to be a commander.");
         }
 
+        // Color identity compliance — only when a commander is designated
+        if (commanders.Count > 0)
+        {
+            var commanderIdentity = commanders
+                .SelectMany(c => c.ColorIdentity)
+                .ToHashSet();
+
+            foreach (var entry in mainDeck)
+            {
+                var violations = entry.ColorIdentity
+                    .Where(c => !commanderIdentity.Contains(c))
+                    .ToList();
+
+                if (violations.Count > 0)
+                {
+                    var names = string.Join(", ", violations);
+                    errors.Add($"'{entry.CardName}' has color identity outside the commander's ({names}).");
+                }
+            }
+        }
+
         return new AnalysisValidationResult(errors.Count == 0, errors, warnings);
     }
 

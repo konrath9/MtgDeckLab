@@ -40,6 +40,30 @@ internal static class AnalysisTestHelpers
             IsSideboard: false
         );
 
+    public static DeckAnalysisEntry BasicLand(Color identity, int quantity = 1)
+    {
+        var name = identity switch
+        {
+            Color.White => "Plains",
+            Color.Blue => "Island",
+            Color.Black => "Swamp",
+            Color.Red => "Mountain",
+            Color.Green => "Forest",
+            _ => "Wastes"
+        };
+        return new(name, 0,
+            Array.AsReadOnly(Array.Empty<Color>()),
+            identity == Color.Colorless ? Array.AsReadOnly(Array.Empty<Color>()) : new Color[] { identity }.AsReadOnly(),
+            [CardType.Land], [CardSuperType.Basic],
+            quantity, false, false);
+    }
+
+    public static DeckAnalysisEntry Colorless(string name = "Sol Ring", decimal cmc = 1) =>
+        new(name, cmc,
+            Array.AsReadOnly(Array.Empty<Color>()),
+            Array.AsReadOnly(Array.Empty<Color>()),
+            [CardType.Artifact], [], 1, false, false);
+
     public static DeckAnalysisEntry Creature(
         string name = "Test Creature",
         decimal cmc = 3,
