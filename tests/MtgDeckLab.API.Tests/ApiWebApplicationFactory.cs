@@ -44,7 +44,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLi
                 ["Jwt:Issuer"] = "MtgDeckLab",
                 ["Jwt:Audience"] = "MtgDeckLab",
                 ["Jwt:ExpiresInHours"] = "1",
-                ["Admin:Emails"] = "admin@test.com"
+                ["Admin:Emails"] = "admin@test.com",
+                ["Scryfall:ScheduledSyncEnabled"] = "false"
             });
         });
 

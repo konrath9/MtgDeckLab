@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Infrastructure.Auth;
@@ -36,6 +37,17 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.UserAgent.ParseAdd("MtgDeckLab/1.0 (portfolio project)");
             client.Timeout = TimeSpan.FromMinutes(10);
         });
+
+        var scheduledSyncEnabled = !bool.TryParse(configuration["Scryfall:ScheduledSyncEnabled"], out var enabled) || enabled;
+        if (scheduledSyncEnabled)
+        {
+            var intervalHours = double.TryParse(configuration["Scryfall:SyncIntervalHours"], out var h) ? h : 24;
+
+            services.AddHostedService(sp => new ScryfallSyncBackgroundService(
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<ILogger<ScryfallSyncBackgroundService>>(),
+                TimeSpan.FromHours(intervalHours)));
+        }
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
