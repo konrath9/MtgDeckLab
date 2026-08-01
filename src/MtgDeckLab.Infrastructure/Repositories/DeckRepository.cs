@@ -16,6 +16,23 @@ public class DeckRepository : IDeckRepository
             .Include(d => d.Entries)
             .FirstOrDefaultAsync(d => d.Id == id, ct);
 
+    public async Task<(IReadOnlyList<Deck> Items, int TotalCount)> GetByUserIdAsync(
+        Guid userId, int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _context.Decks.Where(d => d.UserId == userId);
+
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .Include(d => d.Entries)
+            .AsSplitQuery()
+            .OrderByDescending(d => d.UpdatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
     public async Task AddAsync(Deck deck, CancellationToken ct = default) =>
         await _context.Decks.AddAsync(deck, ct);
 

@@ -2,11 +2,13 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MtgDeckLab.Application.Common;
 using MtgDeckLab.Application.Decks.Commands.ImportDeck;
 using MtgDeckLab.Application.Decks.Commands.TakeFinanceSnapshot;
 using MtgDeckLab.Application.Decks.Queries.AnalyzeDeck;
 using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
+using MtgDeckLab.Application.Decks.Queries.ListDecks;
 using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.API.Controllers;
@@ -22,6 +24,15 @@ public class DecksController : ControllerBase
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>Lista os decks do usuário autenticado, com paginação.</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<DeckSummary>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> List([FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new ListDecksQuery(CurrentUserId, page, pageSize), ct);
+        return Ok(result);
+    }
 
     /// <summary>Retorna detalhes de um deck do usuário autenticado.</summary>
     [HttpGet("{id:guid}")]
