@@ -25,6 +25,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthTokenResult
         if (user is null || !_hasher.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        return new AuthTokenResult(user.Id, _jwt.GenerateToken(user.Id, user.Email));
+        return new AuthTokenResult(user.Id, _jwt.GenerateToken(user.Id, user.Email, user.Role));
     }
 }

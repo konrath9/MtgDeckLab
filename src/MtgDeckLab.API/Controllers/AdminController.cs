@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MtgDeckLab.Application.Cards.Commands.SyncScryfallCards;
 
@@ -6,6 +7,7 @@ namespace MtgDeckLab.API.Controllers;
 
 [ApiController]
 [Route("api/admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly ISender _sender;

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MtgDeckLab.Application.Interfaces;
+using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.Infrastructure.Auth;
 
@@ -13,7 +14,7 @@ public sealed class JwtService : IJwtService
 
     public JwtService(IConfiguration config) => _config = config;
 
-    public string GenerateToken(Guid userId, string email)
+    public string GenerateToken(Guid userId, string email, Role role)
     {
         var secret = _config["Jwt:Secret"]!;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
@@ -23,6 +24,7 @@ public sealed class JwtService : IJwtService
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(ClaimTypes.Role, role.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

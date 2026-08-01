@@ -28,6 +28,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IJwtService, JwtService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IAdminEmailAllowlist, ConfigAdminEmailAllowlist>();
 
         services.AddHttpClient<IScryfallSyncService, ScryfallSyncService>(client =>
         {

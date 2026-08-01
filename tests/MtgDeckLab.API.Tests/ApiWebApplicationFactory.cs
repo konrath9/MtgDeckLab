@@ -43,7 +43,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLi
                 ["Jwt:Secret"] = "test-secret-key-must-be-32-chars-long!!",
                 ["Jwt:Issuer"] = "MtgDeckLab",
                 ["Jwt:Audience"] = "MtgDeckLab",
-                ["Jwt:ExpiresInHours"] = "1"
+                ["Jwt:ExpiresInHours"] = "1",
+                ["Admin:Emails"] = "admin@test.com"
             });
         });
 
