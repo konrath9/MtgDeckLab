@@ -11,7 +11,7 @@ public class DeckConfiguration : IEntityTypeConfiguration<Deck>
         builder.ToTable("decks");
 
         builder.HasKey(d => d.Id);
-        builder.Property(d => d.Id).HasColumnName("id");
+        builder.Property(d => d.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(d => d.UserId).HasColumnName("user_id");
         builder.Property(d => d.Name).HasColumnName("name").HasMaxLength(256).IsRequired();
         builder.Property(d => d.Format).HasColumnName("format").HasConversion<int>();

@@ -11,7 +11,7 @@ public class DeckEntryConfiguration : IEntityTypeConfiguration<DeckEntry>
         builder.ToTable("deck_entries");
 
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.Id).HasColumnName("id");
+        builder.Property(e => e.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(e => e.DeckId).HasColumnName("deck_id");
         builder.Property(e => e.CardId).HasColumnName("card_id");
         builder.Property(e => e.Quantity).HasColumnName("quantity");

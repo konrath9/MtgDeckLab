@@ -3,8 +3,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MtgDeckLab.Application.Common;
+using MtgDeckLab.Application.Decks.Commands.DeleteDeck;
 using MtgDeckLab.Application.Decks.Commands.ImportDeck;
 using MtgDeckLab.Application.Decks.Commands.TakeFinanceSnapshot;
+using MtgDeckLab.Application.Decks.Commands.UpdateDeck;
+using MtgDeckLab.Application.Decks.Commands.UpsertDeckEntry;
 using MtgDeckLab.Application.Decks.Queries.AnalyzeDeck;
 using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
@@ -42,6 +45,67 @@ public class DecksController : ControllerBase
     {
         var result = await _sender.Send(new GetDeckByIdQuery(id, CurrentUserId), ct);
         return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Renomeia/atualiza a descrição de um deck do usuário autenticado.</summary>
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(DeckDetail), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDeckRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _sender.Send(
+                new UpdateDeckCommand(id, CurrentUserId, request.Name, request.Description), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>Remove um deck do usuário autenticado (e seu histórico financeiro).</summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _sender.Send(new DeleteDeckCommand(id, CurrentUserId), ct);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>
+    /// Define a quantidade de uma carta num slot do deck (main/sideboard/commander).
+    /// Quantity = 0 remove a carta.
+    /// </summary>
+    [HttpPut("{id:guid}/entries")]
+    [ProducesResponseType(typeof(UpsertDeckEntryResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpsertEntry(Guid id, [FromBody] UpsertDeckEntryRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _sender.Send(new UpsertDeckEntryCommand(
+                id, CurrentUserId, request.CardName, request.Quantity, request.IsSideboard, request.IsCommander), ct);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -112,4 +176,13 @@ public record ImportDeckResponse(
     Guid DeckId,
     int ResolvedCards,
     IReadOnlyList<string> UnresolvedCardNames
+);
+
+public record UpdateDeckRequest(string Name, string? Description = null);
+
+public record UpsertDeckEntryRequest(
+    string CardName,
+    int Quantity,
+    bool IsSideboard = false,
+    bool IsCommander = false
 );

@@ -8,5 +8,6 @@ public interface IDeckRepository
     Task<(IReadOnlyList<Deck> Items, int TotalCount)> GetByUserIdAsync(
         Guid userId, int page, int pageSize, CancellationToken ct = default);
     Task AddAsync(Deck deck, CancellationToken ct = default);
+    void Remove(Deck deck);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

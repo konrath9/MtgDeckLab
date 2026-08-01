@@ -4,9 +4,14 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using MtgDeckLab.API.Controllers;
 using MtgDeckLab.Application.Common;
+using MtgDeckLab.Application.Decks.Commands.UpsertDeckEntry;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
+using MtgDeckLab.Application.Interfaces;
+using MtgDeckLab.Domain.Entities;
+using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.API.Tests.Integration;
 
@@ -32,6 +37,33 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", auth!.Token);
         return client;
+    }
+
+    // Nenhuma carta é sincronizada nos testes (Scryfall real fica fora do escopo dos testes de
+    // integração) — entradas de deck só resolvem contra cartas semeadas explicitamente aqui.
+    private async Task SeedCardAsync(string name)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var cardRepo = scope.ServiceProvider.GetRequiredService<ICardRepository>();
+        var card = new Card(
+            scryfallId: Guid.NewGuid(),
+            name: name,
+            manaCost: "{R}",
+            cmc: 1,
+            colors: [Color.Red],
+            colorIdentity: [Color.Red],
+            typeLine: "Instant",
+            supertypes: [],
+            types: [CardType.Instant],
+            subtypes: [],
+            oracleText: null,
+            power: null,
+            toughness: null,
+            loyalty: null,
+            priceUsd: 1.00m,
+            priceUsdFoil: null,
+            setCode: "tst");
+        await cardRepo.UpsertAsync(card, CancellationToken.None);
     }
 
     [Fact]
@@ -234,5 +266,202 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         var response = await client.PostAsync($"/api/decks/{deckId}/finance/snapshot", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task Update_OwnDeck_Returns200WithUpdatedFields()
+    {
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Old Name",
+            Format = "Modern",
+            Decklist = "4 Shock"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var response = await client.PutAsJsonAsync($"/api/decks/{deckId}", new
+        {
+            Name = "New Name",
+            Description = "Updated description"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("New Name");
+        body.Should().Contain("Updated description");
+    }
+
+    [Fact]
+    public async Task Update_AnotherUsersDeck_Returns404()
+    {
+        var clientA = await AuthenticatedClientAsync();
+        var importResp = await clientA.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Owner Deck",
+            Format = "Modern",
+            Decklist = "4 Shock"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var clientB = await AuthenticatedClientAsync();
+        var response = await clientB.PutAsJsonAsync($"/api/decks/{deckId}", new { Name = "Hijacked" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Delete_OwnDeck_Returns204AndSubsequentGetReturns404()
+    {
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Deck To Delete",
+            Format = "Modern",
+            Decklist = "4 Shock"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var deleteResponse = await client.DeleteAsync($"/api/decks/{deckId}");
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var getResponse = await client.GetAsync($"/api/decks/{deckId}");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Delete_AnotherUsersDeck_Returns404()
+    {
+        var clientA = await AuthenticatedClientAsync();
+        var importResp = await clientA.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Protected Deck",
+            Format = "Modern",
+            Decklist = "4 Shock"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var clientB = await AuthenticatedClientAsync();
+        var response = await clientB.DeleteAsync($"/api/decks/{deckId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpsertEntry_NewCard_AddsToMainDeckAndAppearsInGetById()
+    {
+        await SeedCardAsync("Test Bolt");
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Entry Deck",
+            Format = "Modern",
+            Decklist = "20 Mountain" // não resolve — nenhuma carta chamada Mountain foi semeada
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new
+        {
+            CardName = "Test Bolt",
+            Quantity = 4
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<UpsertDeckEntryResult>(JsonOptions);
+        body!.MainDeckCount.Should().Be(4);
+
+        var getResponse = await client.GetAsync($"/api/decks/{deckId}");
+        var getBody = await getResponse.Content.ReadAsStringAsync();
+        getBody.Should().Contain("Test Bolt");
+    }
+
+    [Fact]
+    public async Task UpsertEntry_UpdateQuantity_ChangesMainDeckCount()
+    {
+        await SeedCardAsync("Update Bolt");
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Update Entry Deck",
+            Format = "Modern",
+            Decklist = "1 Plains"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
+            new { CardName = "Update Bolt", Quantity = 2 });
+        var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
+            new { CardName = "Update Bolt", Quantity = 3 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<UpsertDeckEntryResult>(JsonOptions);
+        body!.MainDeckCount.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task UpsertEntry_ZeroQuantity_RemovesCard()
+    {
+        await SeedCardAsync("Remove Bolt");
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Remove Entry Deck",
+            Format = "Modern",
+            Decklist = "1 Plains"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
+            new { CardName = "Remove Bolt", Quantity = 2 });
+        var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
+            new { CardName = "Remove Bolt", Quantity = 0 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<UpsertDeckEntryResult>(JsonOptions);
+        body!.MainDeckCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpsertEntry_UnknownCardName_Returns400()
+    {
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Unknown Card Deck",
+            Format = "Modern",
+            Decklist = "1 Plains"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new
+        {
+            CardName = $"Nonexistent Card {Guid.NewGuid()}",
+            Quantity = 1
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpsertEntry_AnotherUsersDeck_Returns404()
+    {
+        await SeedCardAsync("Trespass Bolt");
+        var clientA = await AuthenticatedClientAsync();
+        var importResp = await clientA.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Owner Entry Deck",
+            Format = "Modern",
+            Decklist = "1 Plains"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var clientB = await AuthenticatedClientAsync();
+        var response = await clientB.PutAsJsonAsync($"/api/decks/{deckId}/entries", new
+        {
+            CardName = "Trespass Bolt",
+            Quantity = 1
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

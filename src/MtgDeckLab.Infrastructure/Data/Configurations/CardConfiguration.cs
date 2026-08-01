@@ -16,7 +16,7 @@ public class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.ToTable("cards");
 
         builder.HasKey(c => c.Id);
-        builder.Property(c => c.Id).HasColumnName("id");
+        builder.Property(c => c.Id).HasColumnName("id").ValueGeneratedNever();
         builder.HasIndex(c => c.ScryfallId).IsUnique();
 
         builder.Property(c => c.ScryfallId).HasColumnName("scryfall_id").IsRequired();

@@ -13,5 +13,14 @@ public record DeckDetail(
     int MainDeckCount,
     int SideboardCount,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt
+    DateTimeOffset UpdatedAt,
+    IReadOnlyList<DeckEntryDetail> Entries
+);
+
+public record DeckEntryDetail(
+    Guid CardId,
+    string CardName,
+    int Quantity,
+    bool IsCommander,
+    bool IsSideboard
 );

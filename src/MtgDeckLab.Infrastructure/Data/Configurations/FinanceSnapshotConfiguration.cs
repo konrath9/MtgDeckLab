@@ -11,7 +11,7 @@ public class FinanceSnapshotConfiguration : IEntityTypeConfiguration<FinanceSnap
         builder.ToTable("finance_snapshots");
 
         builder.HasKey(s => s.Id);
-        builder.Property(s => s.Id).HasColumnName("id");
+        builder.Property(s => s.Id).HasColumnName("id").ValueGeneratedNever();
         builder.Property(s => s.DeckId).HasColumnName("deck_id");
         builder.Property(s => s.TotalCostUsd).HasColumnName("total_cost_usd").HasPrecision(12, 2);
         builder.Property(s => s.CreatedAt).HasColumnName("created_at");

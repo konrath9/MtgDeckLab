@@ -36,6 +36,8 @@ public class DeckRepository : IDeckRepository
     public async Task AddAsync(Deck deck, CancellationToken ct = default) =>
         await _context.Decks.AddAsync(deck, ct);
 
+    public void Remove(Deck deck) => _context.Decks.Remove(deck);
+
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
 }

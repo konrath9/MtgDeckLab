@@ -20,6 +20,11 @@ public class FinanceSnapshotRepository : IFinanceSnapshotRepository
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync(ct);
 
+    public async Task DeleteByDeckIdAsync(Guid deckId, CancellationToken ct = default) =>
+        await _context.FinanceSnapshots
+            .Where(s => s.DeckId == deckId)
+            .ExecuteDeleteAsync(ct);
+
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
         await _context.SaveChangesAsync(ct);
 }
