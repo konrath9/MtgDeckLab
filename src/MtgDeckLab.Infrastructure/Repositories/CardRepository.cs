@@ -32,6 +32,39 @@ public class CardRepository : ICardRepository
     public async Task<Card?> FindByScryfallIdAsync(Guid scryfallId, CancellationToken ct = default) =>
         await _context.Cards.FirstOrDefaultAsync(c => c.ScryfallId == scryfallId, ct);
 
+    // Colors/Types são persistidos como JSON via ValueConverter (ver CardConfiguration), então não
+    // são traduzíveis para SQL — filtro fica restrito às colunas planas (name, type_line, cmc, set_code).
+    public async Task<(IReadOnlyList<Card> Items, int TotalCount)> SearchAsync(
+        string? name, string? type, decimal? minCmc, decimal? maxCmc, string? setCode,
+        int page, int pageSize, CancellationToken ct = default)
+    {
+        var query = _context.Cards.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+            query = query.Where(c => c.Name.ToLower().Contains(name.ToLower()));
+
+        if (!string.IsNullOrWhiteSpace(type))
+            query = query.Where(c => c.TypeLine.ToLower().Contains(type.ToLower()));
+
+        if (minCmc.HasValue)
+            query = query.Where(c => c.Cmc >= minCmc.Value);
+
+        if (maxCmc.HasValue)
+            query = query.Where(c => c.Cmc <= maxCmc.Value);
+
+        if (!string.IsNullOrWhiteSpace(setCode))
+            query = query.Where(c => c.SetCode.ToLower() == setCode.ToLower());
+
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
     public async Task UpsertAsync(Card card, CancellationToken ct = default)
     {
         var exists = await _context.Cards.AnyAsync(c => c.ScryfallId == card.ScryfallId, ct);
