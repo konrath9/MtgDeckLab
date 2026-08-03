@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,6 +9,31 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mtgdecklab -d mtgdecklab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mtgdecklab;Username=mtgdecklab;Password=mtgdecklab_dev"
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env — see .env.example (min 32 chars)}
+      Jwt__Issuer: MtgDeckLab
+      Jwt__Audience: MtgDeckLab
+      Jwt__ExpiresInHours: "24"
+      Admin__Emails: ${ADMIN_EMAILS:-}
+      Scryfall__ScheduledSyncEnabled: ${SCRYFALL_SCHEDULED_SYNC_ENABLED:-true}
+      Scryfall__SyncIntervalHours: ${SCRYFALL_SYNC_INTERVAL_HOURS:-24}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:

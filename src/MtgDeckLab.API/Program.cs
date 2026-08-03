@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using MtgDeckLab.Application;
 using MtgDeckLab.Infrastructure;
+using MtgDeckLab.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,15 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// Deploy via Docker não tem um passo separado de `dotnet ef database update` —
+// aplica as migrations pendentes no boot. Dev local e testes continuam com seus próprios fluxos.
+if (app.Environment.IsProduction())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<MtgDeckLabDbContext>();
+    await db.Database.MigrateAsync();
 }
 
 app.UseHttpsRedirection();
