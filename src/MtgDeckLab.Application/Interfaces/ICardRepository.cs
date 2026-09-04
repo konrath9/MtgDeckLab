@@ -13,6 +13,9 @@ public interface ICardRepository
         string? name, string? type, decimal? minCmc, decimal? maxCmc, string? setCode,
         IReadOnlyList<Color>? colors, bool colorlessOnly,
         int page, int pageSize, CancellationToken ct = default);
+    Task<IReadOnlyList<Card>> FindRecommendationCandidatesAsync(
+        IReadOnlyList<Color> allowedColorIdentity, IReadOnlyCollection<Guid> excludeCardIds,
+        CancellationToken ct = default);
     Task UpsertAsync(Card card, CancellationToken ct = default);
     Task UpsertManyAsync(IEnumerable<Card> cards, CancellationToken ct = default);
 }

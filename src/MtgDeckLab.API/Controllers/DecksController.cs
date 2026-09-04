@@ -14,6 +14,7 @@ using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
+using MtgDeckLab.Application.Decks.Queries.GetDeckRecommendations;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
 using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
 using MtgDeckLab.Domain.Enums;
@@ -138,6 +139,19 @@ public class DecksController : ControllerBase
     public async Task<IActionResult> GetAnalysis(Guid id, CancellationToken ct)
     {
         var result = await _sender.Send(new AnalyzeDeckQuery(id, CurrentUserId), ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Recomenda cartas do banco (sem IA) pra cada papel que a matriz de cobertura marcou como
+    /// carente (Red) — ranqueadas por color identity, papéis extras e proximidade da CMC média.
+    /// </summary>
+    [HttpGet("{id:guid}/recommendations")]
+    [ProducesResponseType(typeof(DeckRecommendations), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRecommendations(Guid id, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetDeckRecommendationsQuery(id, CurrentUserId), ct);
         return result is null ? NotFound() : Ok(result);
     }
 

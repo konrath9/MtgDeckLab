@@ -75,6 +75,17 @@ public class CardRepository : ICardRepository
         return (items, totalCount);
     }
 
+    // "Subset of" (card's color identity ⊆ allowedColorIdentity) traduz pra `<@` no Postgres via
+    // o padrão array.All(x => otherArray.Contains(x)) que o provider Npgsql reconhece.
+    public async Task<IReadOnlyList<Card>> FindRecommendationCandidatesAsync(
+        IReadOnlyList<Color> allowedColorIdentity, IReadOnlyCollection<Guid> excludeCardIds,
+        CancellationToken ct = default) =>
+        await _context.Cards
+            .Where(c => !excludeCardIds.Contains(c.Id))
+            .Where(c => !c.TypeLine.ToLower().Contains("land"))
+            .Where(c => EF.Property<List<Color>>(c, "_colorIdentity").All(ci => allowedColorIdentity.Contains(ci)))
+            .ToListAsync(ct);
+
     public async Task UpsertAsync(Card card, CancellationToken ct = default)
     {
         var exists = await _context.Cards.AnyAsync(c => c.ScryfallId == card.ScryfallId, ct);
