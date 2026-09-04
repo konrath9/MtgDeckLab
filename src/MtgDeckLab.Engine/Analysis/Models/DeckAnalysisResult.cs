@@ -5,6 +5,7 @@ public sealed record DeckAnalysisResult(
     ColorDistribution ColorDistribution,
     TypeDistribution TypeDistribution,
     RoleDistribution RoleDistribution,
+    RoleCoverage RoleCoverage,
     AnalysisValidationResult Validation,
     DeckScore Score
 );

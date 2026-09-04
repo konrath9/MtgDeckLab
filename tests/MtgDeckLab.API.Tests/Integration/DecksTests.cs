@@ -254,6 +254,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("roleDistribution");
         body.Should().Contain("Removal");
+        body.Should().Contain("roleCoverage");
     }
 
     [Fact]
