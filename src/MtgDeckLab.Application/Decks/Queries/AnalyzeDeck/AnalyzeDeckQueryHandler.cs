@@ -1,6 +1,6 @@
 using MediatR;
+using MtgDeckLab.Application.Decks;
 using MtgDeckLab.Application.Interfaces;
-using MtgDeckLab.Domain.Entities;
 using MtgDeckLab.Engine.Analysis;
 using MtgDeckLab.Engine.Analysis.Models;
 
@@ -27,16 +27,7 @@ public class AnalyzeDeckQueryHandler : IRequestHandler<AnalyzeDeckQuery, DeckAna
 
         var cardIds = deck.Entries.Select(e => e.CardId).Distinct();
         var cards = await _cardRepo.FindByIdsAsync(cardIds, cancellationToken);
-        var cardById = cards.ToDictionary(c => c.Id);
 
-        var entries = deck.Entries
-            .Where(e => cardById.ContainsKey(e.CardId))
-            .Select(e => ToAnalysisEntry(e, cardById[e.CardId]));
-
-        return _analyzer.Analyze(new DeckForAnalysis(deck.Name, deck.Format, entries));
+        return _analyzer.Analyze(DeckAnalysisMapper.BuildForAnalysis(deck, cards));
     }
-
-    private static DeckAnalysisEntry ToAnalysisEntry(DeckEntry entry, Card card) =>
-        new(card.Name, card.Cmc, card.Colors, card.ColorIdentity,
-            card.Types, card.Supertypes, entry.Quantity, entry.IsCommander, entry.IsSideboard);
 }

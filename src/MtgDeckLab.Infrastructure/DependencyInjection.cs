@@ -24,6 +24,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICardRepository, CardRepository>();
         services.AddScoped<IDeckRepository, DeckRepository>();
+        services.AddScoped<IDeckVersionRepository, DeckVersionRepository>();
         services.AddScoped<IFinanceSnapshotRepository, FinanceSnapshotRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
 

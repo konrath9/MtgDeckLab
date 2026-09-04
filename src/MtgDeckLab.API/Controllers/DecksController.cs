@@ -5,13 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 using MtgDeckLab.Application.Common;
 using MtgDeckLab.Application.Decks.Commands.DeleteDeck;
 using MtgDeckLab.Application.Decks.Commands.ImportDeck;
+using MtgDeckLab.Application.Decks.Commands.TakeDeckVersion;
 using MtgDeckLab.Application.Decks.Commands.TakeFinanceSnapshot;
 using MtgDeckLab.Application.Decks.Commands.UpdateDeck;
 using MtgDeckLab.Application.Decks.Commands.UpsertDeckEntry;
 using MtgDeckLab.Application.Decks.Queries.AnalyzeDeck;
 using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
+using MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
+using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
 using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.API.Controllers;
@@ -162,6 +165,43 @@ public class DecksController : ControllerBase
         {
             return NotFound();
         }
+    }
+
+    /// <summary>Registra uma nova versão do deck: snapshot da composição atual + score calculado no momento.</summary>
+    [HttpPost("{id:guid}/versions")]
+    [ProducesResponseType(typeof(TakeDeckVersionResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> TakeVersion(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _sender.Send(new TakeDeckVersionCommand(id, CurrentUserId), ct);
+            return Created($"/api/decks/{id}/versions/{result.VersionId}", result);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
+
+    /// <summary>Lista o histórico de versões do deck, da mais recente para a mais antiga.</summary>
+    [HttpGet("{id:guid}/versions")]
+    [ProducesResponseType(typeof(IReadOnlyList<DeckVersionSummary>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListVersions(Guid id, CancellationToken ct)
+    {
+        var result = await _sender.Send(new ListDeckVersionsQuery(id, CurrentUserId), ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>Retorna a composição completa de uma versão específica do deck.</summary>
+    [HttpGet("{id:guid}/versions/{versionId:guid}")]
+    [ProducesResponseType(typeof(DeckVersionDetail), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVersion(Guid id, Guid versionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetDeckVersionByIdQuery(id, versionId, CurrentUserId), ct);
+        return result is null ? NotFound() : Ok(result);
     }
 }
 

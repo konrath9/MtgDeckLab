@@ -11,6 +11,8 @@ public class MtgDeckLabDbContext : DbContext
     public DbSet<Card> Cards => Set<Card>();
     public DbSet<Deck> Decks => Set<Deck>();
     public DbSet<DeckEntry> DeckEntries => Set<DeckEntry>();
+    public DbSet<DeckVersion> DeckVersions => Set<DeckVersion>();
+    public DbSet<DeckVersionEntry> DeckVersionEntries => Set<DeckVersionEntry>();
     public DbSet<FinanceSnapshot> FinanceSnapshots => Set<FinanceSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
