@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MtgDeckLab.API.Controllers;
 using MtgDeckLab.Application.Decks.Commands.TakeDeckVersion;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
+using MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
 using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
@@ -182,6 +183,99 @@ public class DeckVersionsTests : IClassFixture<ApiWebApplicationFactory>
         var deckId = await ImportDeckAsync(client, "Missing Version Deck");
 
         var response = await client.GetAsync($"/api/decks/{deckId}/versions/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Diff_DetectsAddedAndRemovedCards()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        var cardA = $"{marker} Card A";
+        var cardB = $"{marker} Card B";
+        await SeedCardAsync(cardA);
+        await SeedCardAsync(cardB);
+
+        var client = await AuthenticatedClientAsync();
+        var deckId = await ImportDeckAsync(client, "Diff Deck", $"4 {cardA}");
+
+        var v1Resp = await client.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v1 = await v1Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new { CardName = cardA, Quantity = 0 });
+        await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new { CardName = cardB, Quantity = 4 });
+
+        var v2Resp = await client.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v2 = await v2Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        var response = await client.GetAsync(
+            $"/api/decks/{deckId}/versions/diff?fromVersionId={v1!.VersionId}&toVersionId={v2!.VersionId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<DeckVersionDiff>(JsonOptions);
+        body!.FromVersionNumber.Should().Be(1);
+        body.ToVersionNumber.Should().Be(2);
+        body.Added.Should().ContainSingle(c => c.CardName == cardB && c.QuantityAfter == 4);
+        body.Removed.Should().ContainSingle(c => c.CardName == cardA && c.QuantityBefore == 4);
+        body.QuantityChanged.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Diff_DetectsQuantityChange()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        var cardName = $"{marker} Quantity Card";
+        await SeedCardAsync(cardName);
+
+        var client = await AuthenticatedClientAsync();
+        var deckId = await ImportDeckAsync(client, "Diff Quantity Deck", $"2 {cardName}");
+
+        var v1Resp = await client.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v1 = await v1Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new { CardName = cardName, Quantity = 4 });
+
+        var v2Resp = await client.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v2 = await v2Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        var response = await client.GetAsync(
+            $"/api/decks/{deckId}/versions/diff?fromVersionId={v1!.VersionId}&toVersionId={v2!.VersionId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<DeckVersionDiff>(JsonOptions);
+        body!.Added.Should().BeEmpty();
+        body.Removed.Should().BeEmpty();
+        body.QuantityChanged.Should().ContainSingle(c =>
+            c.CardName == cardName && c.QuantityBefore == 2 && c.QuantityAfter == 4);
+    }
+
+    [Fact]
+    public async Task Diff_AnotherUsersDeck_Returns404()
+    {
+        var clientA = await AuthenticatedClientAsync();
+        var deckId = await ImportDeckAsync(clientA, "Protected Diff Deck");
+        var v1Resp = await clientA.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v1 = await v1Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+        var v2Resp = await clientA.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v2 = await v2Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        var clientB = await AuthenticatedClientAsync();
+        var response = await clientB.GetAsync(
+            $"/api/decks/{deckId}/versions/diff?fromVersionId={v1!.VersionId}&toVersionId={v2!.VersionId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Diff_NonExistentVersionId_Returns404()
+    {
+        var client = await AuthenticatedClientAsync();
+        var deckId = await ImportDeckAsync(client, "Diff Missing Version Deck");
+        var v1Resp = await client.PostAsync($"/api/decks/{deckId}/versions", null);
+        var v1 = await v1Resp.Content.ReadFromJsonAsync<TakeDeckVersionResult>(JsonOptions);
+
+        var response = await client.GetAsync(
+            $"/api/decks/{deckId}/versions/diff?fromVersionId={v1!.VersionId}&toVersionId={Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

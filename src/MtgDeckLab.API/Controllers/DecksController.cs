@@ -13,6 +13,7 @@ using MtgDeckLab.Application.Decks.Queries.AnalyzeDeck;
 using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
+using MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
 using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
 using MtgDeckLab.Domain.Enums;
@@ -201,6 +202,21 @@ public class DecksController : ControllerBase
     public async Task<IActionResult> GetVersion(Guid id, Guid versionId, CancellationToken ct)
     {
         var result = await _sender.Send(new GetDeckVersionByIdQuery(id, versionId, CurrentUserId), ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Compara duas versões do deck: cartas adicionadas/removidas/com quantidade alterada,
+    /// variação de score, CMC média e custo total (preços atuais).
+    /// </summary>
+    [HttpGet("{id:guid}/versions/diff")]
+    [ProducesResponseType(typeof(DeckVersionDiff), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DiffVersions(
+        Guid id, [FromQuery] Guid fromVersionId, [FromQuery] Guid toVersionId, CancellationToken ct)
+    {
+        var result = await _sender.Send(
+            new GetDeckVersionDiffQuery(id, fromVersionId, toVersionId, CurrentUserId), ct);
         return result is null ? NotFound() : Ok(result);
     }
 }
