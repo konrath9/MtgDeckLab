@@ -17,6 +17,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opt =>
     opt.SwaggerDoc("v1", new() { Title = "MTG Deck Lab API", Version = "v1" }));
 
+const string FrontendCorsPolicy = "Frontend";
+var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+builder.Services.AddCors(opt =>
+    opt.AddPolicy(FrontendCorsPolicy, policy =>
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -35,6 +43,7 @@ if (app.Environment.IsProduction())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
