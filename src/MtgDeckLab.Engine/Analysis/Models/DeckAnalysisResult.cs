@@ -6,6 +6,7 @@ public sealed record DeckAnalysisResult(
     TypeDistribution TypeDistribution,
     RoleDistribution RoleDistribution,
     RoleCoverage RoleCoverage,
+    ManaBaseAnalysis ManaBase,
     AnalysisValidationResult Validation,
     DeckScore Score
 );

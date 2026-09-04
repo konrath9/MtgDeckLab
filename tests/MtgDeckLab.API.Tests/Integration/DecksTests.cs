@@ -230,6 +230,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("score");
         body.Should().Contain("grade");
+        body.Should().Contain("manaBase");
     }
 
     [Fact]
