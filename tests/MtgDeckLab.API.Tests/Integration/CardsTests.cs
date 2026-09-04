@@ -24,7 +24,8 @@ public class CardsTests : IClassFixture<ApiWebApplicationFactory>
 
     public CardsTests(ApiWebApplicationFactory factory) => _factory = factory;
 
-    private async Task SeedCardAsync(string name, string typeLine, decimal cmc, string setCode = "tst")
+    private async Task SeedCardAsync(
+        string name, string typeLine, decimal cmc, string setCode = "tst", IEnumerable<Color>? colors = null)
     {
         using var scope = _factory.Services.CreateScope();
         var cardRepo = scope.ServiceProvider.GetRequiredService<ICardRepository>();
@@ -33,8 +34,8 @@ public class CardsTests : IClassFixture<ApiWebApplicationFactory>
             name: name,
             manaCost: null,
             cmc: cmc,
-            colors: [],
-            colorIdentity: [],
+            colors: colors ?? [],
+            colorIdentity: colors ?? [],
             typeLine: typeLine,
             supertypes: [],
             types: [],
@@ -105,6 +106,56 @@ public class CardsTests : IClassFixture<ApiWebApplicationFactory>
         var body = await response.Content.ReadFromJsonAsync<PagedResult<CardSummary>>(JsonOptions);
         body!.Items.Should().ContainSingle();
         body.Items[0].Name.Should().Be($"{marker} Mid Cost");
+    }
+
+    [Fact]
+    public async Task Search_ByColor_ReturnsOnlyMatchingCards()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        await SeedCardAsync($"{marker} Lightning Bolt", "Instant", 1, colors: [Color.Red]);
+        await SeedCardAsync($"{marker} Counterspell", "Instant", 2, colors: [Color.Blue]);
+        await SeedCardAsync($"{marker} Boros Charm", "Instant", 2, colors: [Color.Red, Color.White]);
+
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/cards?name={marker}&colors=R");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<CardSummary>>(JsonOptions);
+        body!.Items.Should().HaveCount(2);
+        body.Items.Select(i => i.Name).Should().BeEquivalentTo(
+            $"{marker} Lightning Bolt", $"{marker} Boros Charm");
+    }
+
+    [Fact]
+    public async Task Search_ByMultipleColors_RequiresAllOfThem()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        await SeedCardAsync($"{marker} Lightning Bolt", "Instant", 1, colors: [Color.Red]);
+        await SeedCardAsync($"{marker} Boros Charm", "Instant", 2, colors: [Color.Red, Color.White]);
+
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/cards?name={marker}&colors=R,W");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<CardSummary>>(JsonOptions);
+        body!.Items.Should().ContainSingle();
+        body.Items[0].Name.Should().Be($"{marker} Boros Charm");
+    }
+
+    [Fact]
+    public async Task Search_ByColorlessMarker_ReturnsOnlyCardsWithNoColor()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        await SeedCardAsync($"{marker} Lightning Bolt", "Instant", 1, colors: [Color.Red]);
+        await SeedCardAsync($"{marker} Sol Ring", "Artifact", 1, colors: []);
+
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/cards?name={marker}&colors=C");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<PagedResult<CardSummary>>(JsonOptions);
+        body!.Items.Should().ContainSingle();
+        body.Items[0].Name.Should().Be($"{marker} Sol Ring");
     }
 
     [Fact]

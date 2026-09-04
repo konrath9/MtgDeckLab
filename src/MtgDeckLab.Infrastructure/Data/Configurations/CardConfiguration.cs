@@ -33,14 +33,18 @@ public class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.Property(c => c.SetCode).HasColumnName("set_code").HasMaxLength(8).IsRequired();
         builder.Property(c => c.UpdatedAt).HasColumnName("updated_at");
 
-        // Backing field collections — EF Core accesses _field directly via field-only property
-        builder.Property<List<Color>>("_colors")
+        // Colors/ColorIdentity mapeados como integer[] nativo do Postgres (não JSON-as-text) para
+        // que EF.Property(...).Contains(...) seja traduzido para "= ANY(coluna)" em SQL — permite
+        // filtrar por cor em CardRepository.SearchAsync.
+        builder.PrimitiveCollection<List<Color>>("_colors")
             .HasColumnName("colors")
-            .HasConversion(EnumListConverter<Color>(), EnumListComparer<Color>());
+            .HasColumnType("integer[]")
+            .ElementType().HasConversion<int>();
 
-        builder.Property<List<Color>>("_colorIdentity")
+        builder.PrimitiveCollection<List<Color>>("_colorIdentity")
             .HasColumnName("color_identity")
-            .HasConversion(EnumListConverter<Color>(), EnumListComparer<Color>());
+            .HasColumnType("integer[]")
+            .ElementType().HasConversion<int>();
 
         builder.Property<List<CardSuperType>>("_supertypes")
             .HasColumnName("supertypes")

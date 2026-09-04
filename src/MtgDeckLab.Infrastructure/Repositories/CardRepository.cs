@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
+using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Infrastructure.Data;
 
 namespace MtgDeckLab.Infrastructure.Repositories;
@@ -32,10 +33,12 @@ public class CardRepository : ICardRepository
     public async Task<Card?> FindByScryfallIdAsync(Guid scryfallId, CancellationToken ct = default) =>
         await _context.Cards.FirstOrDefaultAsync(c => c.ScryfallId == scryfallId, ct);
 
-    // Colors/Types são persistidos como JSON via ValueConverter (ver CardConfiguration), então não
-    // são traduzíveis para SQL — filtro fica restrito às colunas planas (name, type_line, cmc, set_code).
+    // Types/Supertypes/Subtypes ainda são persistidos como JSON via ValueConverter (ver
+    // CardConfiguration), então não são traduzíveis pra SQL. Colors/ColorIdentity são integer[]
+    // nativo do Postgres — acessados via EF.Property(shadow field) pra permitir filtro por cor.
     public async Task<(IReadOnlyList<Card> Items, int TotalCount)> SearchAsync(
         string? name, string? type, decimal? minCmc, decimal? maxCmc, string? setCode,
+        IReadOnlyList<Color>? colors, bool colorlessOnly,
         int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Cards.AsQueryable();
@@ -54,6 +57,13 @@ public class CardRepository : ICardRepository
 
         if (!string.IsNullOrWhiteSpace(setCode))
             query = query.Where(c => c.SetCode.ToLower() == setCode.ToLower());
+
+        if (colors is { Count: > 0 })
+            foreach (var color in colors)
+                query = query.Where(c => EF.Property<List<Color>>(c, "_colors").Contains(color));
+
+        if (colorlessOnly)
+            query = query.Where(c => EF.Property<List<Color>>(c, "_colors").Count == 0);
 
         var totalCount = await query.CountAsync(ct);
         var items = await query

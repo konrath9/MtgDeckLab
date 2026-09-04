@@ -14,8 +14,9 @@ public class CardsController : ControllerBase
     public CardsController(ISender sender) => _sender = sender;
 
     /// <summary>
-    /// Busca cartas sincronizadas da Scryfall por nome, tipo, faixa de CMC ou set, com paginação.
+    /// Busca cartas sincronizadas da Scryfall por nome, tipo, faixa de CMC, set ou cor, com paginação.
     /// </summary>
+    /// <param name="colors">Letras WUBRG separadas por vírgula (ex.: "W,U"); "C" filtra cartas incolores.</param>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CardSummary>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search(
@@ -24,12 +25,13 @@ public class CardsController : ControllerBase
         [FromQuery] decimal? minCmc,
         [FromQuery] decimal? maxCmc,
         [FromQuery] string? setCode,
+        [FromQuery] string? colors,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await _sender.Send(
-            new SearchCardsQuery(name, type, minCmc, maxCmc, setCode, page, pageSize), ct);
+            new SearchCardsQuery(name, type, minCmc, maxCmc, setCode, colors, page, pageSize), ct);
         return Ok(result);
     }
 }
