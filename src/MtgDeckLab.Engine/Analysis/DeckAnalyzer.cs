@@ -11,9 +11,11 @@ public sealed class DeckAnalyzer
         var manaCurve = ManaCurveAnalyzer.Analyze(mainDeck);
         var colorDistribution = ColorDistributionAnalyzer.Analyze(mainDeck);
         var typeDistribution = TypeDistributionAnalyzer.Analyze(mainDeck);
+        var roleDistribution = CardRoleAnalyzer.Analyze(mainDeck);
         var validation = FormatValidator.Validate(deck);
         var score = DeckScorer.Score(deck, manaCurve, colorDistribution, typeDistribution, validation);
 
-        return new DeckAnalysisResult(manaCurve, colorDistribution, typeDistribution, validation, score);
+        return new DeckAnalysisResult(
+            manaCurve, colorDistribution, typeDistribution, roleDistribution, validation, score);
     }
 }

@@ -14,7 +14,8 @@ internal static class AnalysisTestHelpers
         Color[]? colors = null,
         Color[]? colorIdentity = null,
         bool isCommander = false,
-        bool isSideboard = false) =>
+        bool isSideboard = false,
+        string? oracleText = null) =>
         new(
             CardName: name,
             Cmc: cmc,
@@ -24,7 +25,8 @@ internal static class AnalysisTestHelpers
             Supertypes: (supertypes ?? []).AsReadOnly(),
             Quantity: quantity,
             IsCommander: isCommander,
-            IsSideboard: isSideboard
+            IsSideboard: isSideboard,
+            OracleText: oracleText
         );
 
     public static DeckAnalysisEntry Land(string name = "Forest", int quantity = 1, bool isBasic = true) =>

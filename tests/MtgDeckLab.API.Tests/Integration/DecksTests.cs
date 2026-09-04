@@ -41,7 +41,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
 
     // Nenhuma carta é sincronizada nos testes (Scryfall real fica fora do escopo dos testes de
     // integração) — entradas de deck só resolvem contra cartas semeadas explicitamente aqui.
-    private async Task SeedCardAsync(string name)
+    private async Task SeedCardAsync(string name, string? oracleText = null)
     {
         using var scope = _factory.Services.CreateScope();
         var cardRepo = scope.ServiceProvider.GetRequiredService<ICardRepository>();
@@ -56,7 +56,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
             supertypes: [],
             types: [CardType.Instant],
             subtypes: [],
-            oracleText: null,
+            oracleText: oracleText,
             power: null,
             toughness: null,
             loyalty: null,
@@ -230,6 +230,30 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("score");
         body.Should().Contain("grade");
+    }
+
+    [Fact]
+    public async Task Analysis_DeckWithRemovalSpell_ReturnsRoleDistribution()
+    {
+        var marker = Guid.NewGuid().ToString("N")[..8];
+        var cardName = $"{marker} Doom Blade";
+        await SeedCardAsync(cardName, oracleText: "Destroy target creature.");
+
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Removal Deck",
+            Format = "Modern",
+            Decklist = $"4 {cardName}"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var response = await client.GetAsync($"/api/decks/{deckId}/analysis");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("roleDistribution");
+        body.Should().Contain("Removal");
     }
 
     [Fact]

@@ -29,5 +29,5 @@ internal static class DeckAnalysisMapper
 
     private static DeckAnalysisEntry ToAnalysisEntry(Card card, int quantity, bool isCommander, bool isSideboard) =>
         new(card.Name, card.Cmc, card.Colors, card.ColorIdentity,
-            card.Types, card.Supertypes, quantity, isCommander, isSideboard);
+            card.Types, card.Supertypes, quantity, isCommander, isSideboard, card.OracleText);
 }
