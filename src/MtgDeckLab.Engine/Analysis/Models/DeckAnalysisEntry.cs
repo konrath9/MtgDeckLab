@@ -23,4 +23,5 @@ public sealed record DeckAnalysisEntry(
     public bool IsCreature => Types.Contains(CardType.Creature);
     public bool IsLegendary => Supertypes.Contains(CardSuperType.Legendary);
     public IReadOnlyList<CardRole> Roles => CardRoleClassifier.Classify(OracleText, Types);
+    public IReadOnlyList<SynergyTag> SynergyTags => SynergyTagClassifier.Classify(OracleText);
 }

@@ -7,6 +7,7 @@ public sealed record DeckAnalysisResult(
     RoleDistribution RoleDistribution,
     RoleCoverage RoleCoverage,
     ManaBaseAnalysis ManaBase,
+    SynergyAnalysis Synergy,
     AnalysisValidationResult Validation,
     DeckScore Score
 );

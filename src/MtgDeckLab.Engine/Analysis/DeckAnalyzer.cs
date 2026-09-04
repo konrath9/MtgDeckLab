@@ -14,11 +14,12 @@ public sealed class DeckAnalyzer
         var roleDistribution = CardRoleAnalyzer.Analyze(mainDeck);
         var roleCoverage = RoleCoverageAnalyzer.Analyze(roleDistribution, deck.Format);
         var manaBase = ManaBaseAnalyzer.Analyze(deck);
+        var synergy = SynergyAnalyzer.Analyze(mainDeck);
         var validation = FormatValidator.Validate(deck);
         var score = DeckScorer.Score(deck, manaCurve, colorDistribution, typeDistribution, validation);
 
         return new DeckAnalysisResult(
             manaCurve, colorDistribution, typeDistribution, roleDistribution, roleCoverage,
-            manaBase, validation, score);
+            manaBase, synergy, validation, score);
     }
 }

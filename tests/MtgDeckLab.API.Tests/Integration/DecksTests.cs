@@ -231,6 +231,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         body.Should().Contain("score");
         body.Should().Contain("grade");
         body.Should().Contain("manaBase");
+        body.Should().Contain("synergy");
     }
 
     [Fact]
