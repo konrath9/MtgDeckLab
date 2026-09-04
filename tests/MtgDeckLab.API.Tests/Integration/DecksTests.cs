@@ -259,6 +259,43 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Simulation_OwnDeck_Returns200WithKeepableHandRate()
+    {
+        var client = await AuthenticatedClientAsync();
+        var importResp = await client.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Simulation Deck",
+            Format = "Modern",
+            Decklist = "20 Mountain\n20 Shock" // não resolve — deck fica vazio, exercita o caminho de guarda
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var response = await client.GetAsync($"/api/decks/{deckId}/simulation?iterations=200");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("keepableHandRate");
+    }
+
+    [Fact]
+    public async Task Simulation_AnotherUsersDeck_Returns404()
+    {
+        var clientA = await AuthenticatedClientAsync();
+        var importResp = await clientA.PostAsJsonAsync("/api/decks/import", new
+        {
+            Name = "Protected Simulation Deck",
+            Format = "Modern",
+            Decklist = "4 Shock"
+        });
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+
+        var clientB = await AuthenticatedClientAsync();
+        var response = await clientB.GetAsync($"/api/decks/{deckId}/simulation");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Finance_OwnDeck_Returns200()
     {
         var client = await AuthenticatedClientAsync();

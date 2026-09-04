@@ -15,9 +15,11 @@ using MtgDeckLab.Application.Decks.Queries.GetDeckFinanceSummary;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
 using MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
 using MtgDeckLab.Application.Decks.Queries.GetDeckRecommendations;
+using MtgDeckLab.Application.Decks.Queries.GetDeckSimulation;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
 using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
 using MtgDeckLab.Domain.Enums;
+using MtgDeckLab.Engine.Analysis.Models;
 
 namespace MtgDeckLab.API.Controllers;
 
@@ -152,6 +154,21 @@ public class DecksController : ControllerBase
     public async Task<IActionResult> GetRecommendations(Guid id, CancellationToken ct)
     {
         var result = await _sender.Send(new GetDeckRecommendationsQuery(id, CurrentUserId), ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    /// <summary>
+    /// Simula (Monte Carlo, embaralhando o deck N vezes) taxa de mão mantível e disponibilidade
+    /// de cada papel por turno. Resultado é estocástico — não confundir com /analysis, que é
+    /// determinístico.
+    /// </summary>
+    [HttpGet("{id:guid}/simulation")]
+    [ProducesResponseType(typeof(MonteCarloSimulationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetSimulation(
+        Guid id, [FromQuery] int iterations = 10_000, CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new GetDeckSimulationQuery(id, CurrentUserId, iterations), ct);
         return result is null ? NotFound() : Ok(result);
     }
 
