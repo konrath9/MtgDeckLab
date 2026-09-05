@@ -23,6 +23,7 @@ export function ImportDeckPage() {
   const [commanderDecklist, setCommanderDecklist] = useState('')
   const [sideboardDecklist, setSideboardDecklist] = useState('')
   const [maybeboardDecklist, setMaybeboardDecklist] = useState('')
+  const [showOptional, setShowOptional] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [unresolved, setUnresolved] = useState<UnresolvedCardName[]>([])
   const [pendingDeckId, setPendingDeckId] = useState<string | null>(null)
@@ -59,53 +60,83 @@ export function ImportDeckPage() {
     return acc
   }, {})
 
+  const hasOptionalContent = Boolean(sideboardDecklist || maybeboardDecklist)
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-fg">Import Deck</h1>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-fg">Import Deck</h1>
+      <p className="mb-6 text-sm text-muted">Paste a decklist to see its mana curve, color balance, and legality.</p>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="name">
-            Deck name
-          </label>
-          <input id="name" required value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLASS} />
+        {/* Identity — small, secondary fields, deliberately quiet */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-muted" htmlFor="name">
+              Deck name
+            </label>
+            <input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={`${INPUT_CLASS} text-sm`}
+            />
+          </div>
+          <div className="w-40">
+            <label className="mb-1 block text-xs text-muted" htmlFor="format">
+              Format
+            </label>
+            <select
+              id="format"
+              value={format}
+              onChange={(e) => setFormat(e.target.value as Format)}
+              className={`${INPUT_CLASS} text-sm`}
+            >
+              {ALL_FORMATS.map((f) => (
+                <option key={f} value={f} className="bg-surface text-fg">
+                  {f}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {format === 'Commander' && (
+          <div>
+            <label className="mb-1 block text-xs text-muted" htmlFor="commanderDecklist">
+              Commander
+            </label>
+            <input
+              id="commanderDecklist"
+              value={commanderDecklist}
+              onChange={(e) => setCommanderDecklist(e.target.value)}
+              placeholder={"1 Atraxa, Praetors' Voice"}
+              className={`${INPUT_CLASS} font-mono text-sm`}
+            />
+          </div>
+        )}
+
         <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="format">
-            Format
-          </label>
-          <select
-            id="format"
-            value={format}
-            onChange={(e) => setFormat(e.target.value as Format)}
-            className={INPUT_CLASS}
-          >
-            {ALL_FORMATS.map((f) => (
-              <option key={f} value={f} className="bg-surface text-fg">
-                {f}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="description">
+          <label className="mb-1 block text-xs text-muted" htmlFor="description">
             Description (optional)
           </label>
           <input
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className={INPUT_CLASS}
+            className={`${INPUT_CLASS} text-sm`}
           />
         </div>
 
+        {/* Main Deck — the one required action, visually the largest and strongest thing here */}
         <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="mainDecklist">
+          <label className="mb-1 block text-sm font-medium text-fg" htmlFor="mainDecklist">
             Main Deck
           </label>
           <textarea
             id="mainDecklist"
             required
-            rows={14}
+            rows={16}
             value={mainDecklist}
             onChange={(e) => setMainDecklist(e.target.value)}
             placeholder={'4 Lightning Bolt\n20 Mountain'}
@@ -117,53 +148,49 @@ export function ImportDeckPage() {
           </p>
         </div>
 
-        {format === 'Commander' && (
-          <div>
-            <label className="mb-1 block text-sm text-muted" htmlFor="commanderDecklist">
-              Commander
-            </label>
-            <textarea
-              id="commanderDecklist"
-              rows={2}
-              value={commanderDecklist}
-              onChange={(e) => setCommanderDecklist(e.target.value)}
-              placeholder={"1 Atraxa, Praetors' Voice"}
-              className={`${INPUT_CLASS} font-mono text-sm`}
-            />
+        {/* Sideboard/Maybeboard — collapsed by default so the page doesn't compete with Main Deck */}
+        {!showOptional && !hasOptionalContent ? (
+          <button
+            type="button"
+            onClick={() => setShowOptional(true)}
+            className="text-sm text-accent-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            + Add sideboard or maybeboard cards
+          </button>
+        ) : (
+          <div className="space-y-4 border-l-2 border-border pl-4">
+            <div>
+              <label className="mb-1 block text-xs text-muted" htmlFor="sideboardDecklist">
+                Sideboard
+              </label>
+              <textarea
+                id="sideboardDecklist"
+                rows={4}
+                value={sideboardDecklist}
+                onChange={(e) => setSideboardDecklist(e.target.value)}
+                placeholder={'2 Duress'}
+                className={`${INPUT_CLASS} font-mono text-sm`}
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted" htmlFor="maybeboardDecklist">
+                Maybeboard
+              </label>
+              <textarea
+                id="maybeboardDecklist"
+                rows={4}
+                value={maybeboardDecklist}
+                onChange={(e) => setMaybeboardDecklist(e.target.value)}
+                placeholder={'1 Rhystic Study'}
+                className={`${INPUT_CLASS} font-mono text-sm`}
+              />
+              <p className="mt-1 text-xs text-muted">
+                Cards you're considering but haven't committed to — excluded from score, curve, and
+                validation.
+              </p>
+            </div>
           </div>
         )}
-
-        <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="sideboardDecklist">
-            Sideboard (optional)
-          </label>
-          <textarea
-            id="sideboardDecklist"
-            rows={4}
-            value={sideboardDecklist}
-            onChange={(e) => setSideboardDecklist(e.target.value)}
-            placeholder={'2 Duress'}
-            className={`${INPUT_CLASS} font-mono text-sm`}
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm text-muted" htmlFor="maybeboardDecklist">
-            Maybeboard (optional)
-          </label>
-          <textarea
-            id="maybeboardDecklist"
-            rows={4}
-            value={maybeboardDecklist}
-            onChange={(e) => setMaybeboardDecklist(e.target.value)}
-            placeholder={'1 Rhystic Study'}
-            className={`${INPUT_CLASS} font-mono text-sm`}
-          />
-          <p className="mt-1 text-xs text-muted">
-            Cards you're considering but haven't committed to — excluded from score, curve, and
-            validation.
-          </p>
-        </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}
         {unresolved.length > 0 && (
