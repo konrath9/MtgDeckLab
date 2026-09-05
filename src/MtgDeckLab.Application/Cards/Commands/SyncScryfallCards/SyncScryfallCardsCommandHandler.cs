@@ -41,8 +41,8 @@ public class SyncScryfallCardsCommandHandler
 
                 if (batch.Count >= BatchSize)
                 {
-                    await FlushBatchAsync(batch, cancellationToken);
-                    processed += batch.Count;
+                    if (await TryFlushBatchAsync(batch, cancellationToken)) processed += batch.Count;
+                    else errors++;
                     batch.Clear();
                     _logger.LogInformation("Scryfall sync progress: {Count} cards processed.", processed);
                 }
@@ -50,12 +50,15 @@ public class SyncScryfallCardsCommandHandler
 
             if (batch.Count > 0)
             {
-                await FlushBatchAsync(batch, cancellationToken);
-                processed += batch.Count;
+                if (await TryFlushBatchAsync(batch, cancellationToken)) processed += batch.Count;
+                else errors++;
             }
         }
         catch (Exception ex)
         {
+            // Um erro aqui vem do stream em si (ex.: conexão HTTP caiu) — não dá pra continuar.
+            // Falha de um lote específico (ex.: violação de constraint) é tratada em
+            // TryFlushBatchAsync e não interrompe o resto do sync.
             _logger.LogError(ex, "Scryfall sync failed after {Count} cards.", processed);
             errors++;
         }
@@ -68,6 +71,17 @@ public class SyncScryfallCardsCommandHandler
         return new SyncScryfallCardsResult(processed, errors, sw.Elapsed);
     }
 
-    private async Task FlushBatchAsync(List<Card> batch, CancellationToken ct) =>
-        await _cardRepo.UpsertManyAsync(batch, ct);
+    private async Task<bool> TryFlushBatchAsync(List<Card> batch, CancellationToken ct)
+    {
+        try
+        {
+            await _cardRepo.UpsertManyAsync(batch, ct);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Scryfall sync: failed to upsert batch of {Count} cards, skipping.", batch.Count);
+            return false;
+        }
+    }
 }

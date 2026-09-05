@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -32,7 +34,7 @@ public sealed class ScryfallSyncService : IScryfallSyncService
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         var downloadUri = await GetOracleBulkUriAsync(ct);
-        if (downloadUri is null)
+        if (string.IsNullOrEmpty(downloadUri))
         {
             _logger.LogError("Scryfall oracle_cards bulk URI not found.");
             yield break;
@@ -58,7 +60,7 @@ public sealed class ScryfallSyncService : IScryfallSyncService
 
             return response?.Data
                 .FirstOrDefault(d => d.Type == "oracle_cards")
-                ?.DownloadUri;
+                ?.JsonlDownloadUri;
         }
         catch (Exception ex)
         {
@@ -74,11 +76,13 @@ public sealed class ScryfallSyncService : IScryfallSyncService
         using var response = await _http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, ct);
         response.EnsureSuccessStatusCode();
 
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
+        await using var rawStream = await response.Content.ReadAsStreamAsync(ct);
+        await using var gzipStream = new GZipStream(rawStream, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzipStream);
 
-        await foreach (var dto in JsonSerializer.DeserializeAsyncEnumerable<ScryfallCardDto>(
-                           stream, JsonOpts, ct))
+        while (await reader.ReadLineAsync(ct) is { Length: > 0 } line)
         {
+            var dto = JsonSerializer.Deserialize<ScryfallCardDto>(line, JsonOpts);
             if (dto is not null) yield return dto;
         }
     }
@@ -174,6 +178,11 @@ public sealed class ScryfallSyncService : IScryfallSyncService
             subtypes.AddRange(subPart.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 
+    // Scryfall prices are always formatted with "." as the decimal separator regardless of
+    // locale — parsing with the current culture (e.g. pt-BR, where "." is a thousands separator)
+    // silently mangles values like "1.09" into 109.
     private static decimal? TryParseDecimal(string? value) =>
-        value is not null && decimal.TryParse(value, out var d) ? d : null;
+        value is not null && decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var d)
+            ? d
+            : null;
 }

@@ -22,7 +22,8 @@ public class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.Property(c => c.ScryfallId).HasColumnName("scryfall_id").IsRequired();
         builder.Property(c => c.Name).HasColumnName("name").HasMaxLength(256).IsRequired();
         builder.Property(c => c.ManaCost).HasColumnName("mana_cost").HasMaxLength(128);
-        builder.Property(c => c.Cmc).HasColumnName("cmc").HasPrecision(6, 2);
+        // precision 10 — alguns cards de Un-sets têm cmc absurdo (ex.: Gleemax = 1.000.000).
+        builder.Property(c => c.Cmc).HasColumnName("cmc").HasPrecision(10, 2);
         builder.Property(c => c.TypeLine).HasColumnName("type_line").HasMaxLength(256).IsRequired();
         builder.Property(c => c.OracleText).HasColumnName("oracle_text");
         builder.Property(c => c.Power).HasColumnName("power").HasMaxLength(8);

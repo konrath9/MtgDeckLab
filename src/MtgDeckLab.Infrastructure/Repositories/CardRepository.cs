@@ -12,16 +12,40 @@ public class CardRepository : ICardRepository
 
     public CardRepository(MtgDeckLabDbContext context) => _context = context;
 
-    public async Task<Card?> FindByNameAsync(string name, CancellationToken ct = default) =>
-        await _context.Cards
-            .FirstOrDefaultAsync(c => c.Name.ToLower() == name.ToLower(), ct);
+    public async Task<Card?> FindByNameAsync(string name, CancellationToken ct = default)
+    {
+        var lower = name.ToLowerInvariant();
+        var exact = await _context.Cards.FirstOrDefaultAsync(c => c.Name.ToLower() == lower, ct);
+        if (exact is not null) return exact;
+
+        // Modal double-faced / split cards are stored as "Front // Back" (their full Scryfall
+        // name) — decklists and manual entry only ever reference the front face.
+        return await _context.Cards
+            .FirstOrDefaultAsync(c => c.Name.ToLower().StartsWith(lower + " // "), ct);
+    }
 
     public async Task<IReadOnlyList<Card>> FindByNamesAsync(IEnumerable<string> names, CancellationToken ct = default)
     {
-        var lowerNames = names.Select(n => n.ToLowerInvariant()).ToList();
-        return await _context.Cards
+        var lowerNames = names.Select(n => n.ToLowerInvariant()).ToHashSet();
+
+        var exactMatches = await _context.Cards
             .Where(c => lowerNames.Contains(c.Name.ToLower()))
             .ToListAsync(ct);
+
+        var matchedNames = exactMatches.Select(c => c.Name.ToLowerInvariant()).ToHashSet();
+        var stillMissing = lowerNames.Where(n => !matchedNames.Contains(n)).ToHashSet();
+        if (stillMissing.Count == 0) return exactMatches;
+
+        // Same front-face fallback as FindByNameAsync, batched: pull the (small) set of
+        // double-faced/split cards once and match front names in memory.
+        var dfcCandidates = await _context.Cards
+            .Where(c => c.Name.Contains(" // "))
+            .ToListAsync(ct);
+
+        var frontFaceMatches = dfcCandidates
+            .Where(c => stillMissing.Contains(c.Name.Split(" // ")[0].ToLowerInvariant()));
+
+        return exactMatches.Concat(frontFaceMatches).ToList();
     }
 
     public async Task<IReadOnlyList<Card>> FindByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
@@ -117,6 +141,17 @@ public class CardRepository : ICardRepository
         if (toAdd.Count > 0)
             await _context.Cards.AddRangeAsync(toAdd, ct);
 
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            // O DbContext é scoped e reaproveitado por todos os lotes de um sync — sem isso, as
+            // entidades desse lote falho ficariam "grudadas" no change tracker e envenenariam
+            // (fariam falhar) todo lote seguinte também.
+            _context.ChangeTracker.Clear();
+            throw;
+        }
     }
 }
