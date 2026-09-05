@@ -36,9 +36,19 @@ function applyRegressiveMarketAdjustment(amountUsd: number, usdToBrl: number): n
 }
 
 interface CurrencyContextValue {
-  /** Formata um preço em dólar — converte e mostra em R$ quando o idioma é pt-BR e a cotação está disponível. */
+  /**
+   * Converte um preço em dólar pro valor a exibir (BRL ajustado se pt-BR e a cotação já carregou;
+   * o próprio dólar, sem alteração, caso contrário) — sem formatar. Some vários preços já
+   * convertidos (ex.: o total de um deck) antes de formatar o resultado com formatAmount; somar
+   * dólares brutos e só então converter aplicaria a faixa regressiva ao total agregado em vez de a
+   * cada carta, o que é outra conta.
+   */
+  convertUsd: (amountUsd: number) => number
+  /** Formata um valor já convertido (de convertUsd) na moeda e notação corretas. */
+  formatAmount: (amount: number) => string
+  /** Atalho pro caso comum de converter e formatar um único preço em dólar de uma vez. */
   formatUsd: (amountUsd: number) => string
-  /** true quando o valor de formatUsd é a estimativa ajustada em BRL, não o dólar original. */
+  /** true quando os valores exibidos são a estimativa ajustada em BRL, não o dólar original. */
   isEstimated: boolean
 }
 
@@ -76,10 +86,14 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
       : new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'USD' })
 
+    const convertUsd = (amountUsd: number) =>
+      showBrl ? applyRegressiveMarketAdjustment(amountUsd, usdToBrl!) : amountUsd
+
     return {
       isEstimated: showBrl,
-      formatUsd: (amountUsd) =>
-        formatter.format(showBrl ? applyRegressiveMarketAdjustment(amountUsd, usdToBrl!) : amountUsd),
+      convertUsd,
+      formatAmount: (amount) => formatter.format(amount),
+      formatUsd: (amountUsd) => formatter.format(convertUsd(amountUsd)),
     }
   }, [i18n.language, usdToBrl])
 

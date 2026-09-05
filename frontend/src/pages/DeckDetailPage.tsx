@@ -119,7 +119,7 @@ export function DeckDetailPage() {
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const { twoDecimals } = useFormatters()
-  const { formatUsd } = useCurrency()
+  const { formatAmount, convertUsd, isEstimated } = useCurrency()
 
   const [deck, setDeck] = useState<DeckDetail | null>(null)
   const [analysis, setAnalysis] = useState<DeckAnalysisResult | null>(null)
@@ -258,9 +258,13 @@ export function DeckDetailPage() {
 
   // Estimated value covers Main + Commander only — what you'd actually need to own; Sideboard/
   // Maybeboard aren't committed to the deck.
-  const totalValueUsd = mainEntries
+  //
+  // Each entry's unit price is converted on its own before multiplying by quantity and summing —
+  // the regressive market adjustment is a per-card rule (a card's own Scryfall price decides its
+  // band), so converting only after summing would apply one band to the whole aggregate instead.
+  const totalValue = mainEntries
     .concat(commanderEntries)
-    .reduce((sum, e) => sum + (e.priceUsd ?? 0) * e.quantity, 0)
+    .reduce((sum, e) => sum + convertUsd(e.priceUsd ?? 0) * e.quantity, 0)
 
   const entryCounts = [
     t('deck.entries.countMain', { count: deck.mainDeckCount }),
@@ -451,7 +455,16 @@ export function DeckDetailPage() {
             {t('deck.entries.heading', { counts: entryCounts })}
           </h2>
           <p className="mb-4 text-xs text-muted">
-            {t('deck.entries.subtitle', { value: formatUsd(totalValueUsd) })}
+            {t('deck.entries.subtitle', { value: formatAmount(totalValue) })}
+            {isEstimated && (
+              <span
+                className="ml-1 cursor-help align-middle text-muted/70"
+                title={t('currency.estimateDisclaimer')}
+                aria-label={t('currency.estimateDisclaimer')}
+              >
+                ⓘ
+              </span>
+            )}
           </p>
 
           <AddCardToDeckForm onAdd={handleAddCard} />
@@ -710,7 +723,7 @@ function EntryRow({
   onMove: (cardName: string, moveQuantity: number, fromSection: DeckSection, toSection: DeckSection) => Promise<void>
 }) {
   const { t } = useTranslation()
-  const { formatUsd } = useCurrency()
+  const { formatUsd, isEstimated } = useCurrency()
 
   // A single copy can just move — nothing to choose. With 2+ copies, ask how many, defaulting
   // to "all" so the common case is still one click, but a partial move is just as easy.
@@ -772,7 +785,10 @@ function EntryRow({
 
       <span className="flex shrink-0 items-center gap-2 text-xs text-muted tabular-nums">
         <ManaCost manaCost={entry.manaCost} />
-        <span className="w-16 text-right" title={t('deck.entries.price')}>
+        <span
+          className="w-16 text-right"
+          title={isEstimated ? t('currency.estimateDisclaimer') : t('deck.entries.price')}
+        >
           {entry.priceUsd != null ? formatUsd(entry.priceUsd) : '—'}
         </span>
       </span>

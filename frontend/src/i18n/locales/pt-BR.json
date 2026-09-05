@@ -149,6 +149,9 @@
       "removeCardLabel": "Remover {{card}}"
     }
   },
+  "currency": {
+    "estimateDisclaimer": "Preço estimado com base no mercado internacional, ajustado matematicamente para a média nacional."
+  },
   "analysis": {
     "loading": "Carregando análise…",
     "error": "Não foi possível carregar a análise.",
