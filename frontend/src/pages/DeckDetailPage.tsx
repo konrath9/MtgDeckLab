@@ -132,6 +132,7 @@ export function DeckDetailPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [entryError, setEntryError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'entries' | 'analysis'>('entries')
 
   async function refetchDeck() {
     if (!id) return
@@ -315,17 +316,31 @@ export function DeckDetailPage() {
         )}
       </div>
 
-      {/* Score + interpretation + verdict — one coherent summary, not three isolated pieces */}
+      {/* Score + verdict — stays visible above the tabs: the one quick-scan summary the user
+          should always have in view, kept deliberately minimal so it doesn't crowd out Entries. */}
       {analysisError && <p className="text-sm text-danger">{analysisError}</p>}
       {!analysis && !analysisError && <p className="text-muted">Loading analysis…</p>}
       {analysis && (
-        <>
-          <div className={SECTION_GAP}>
-            <ScoreBadge score={analysis.score.score} grade={analysis.score.grade} />
-            <p className="mt-5 max-w-2xl text-base text-fg">{buildVerdict(analysis, deck.format)}</p>
-          </div>
+        <div className={SECTION_GAP}>
+          <ScoreBadge score={analysis.score.score} grade={analysis.score.grade} />
+          <p className="mt-5 max-w-2xl text-base text-fg">{buildVerdict(analysis, deck.format)}</p>
+        </div>
+      )}
 
-          {/* Strengths / needs attention — a diagnostic summary, not a second score table */}
+      {/* In-page navigation — Entries first: it's the content people come here to act on. Analysis
+          and, later, Versions/Recommendations/Simulation/Synergy sit alongside it as detail modes. */}
+      <TabBar
+        active={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          { key: 'entries', label: 'Entries' },
+          { key: 'analysis', label: 'Analysis' },
+        ]}
+      />
+
+      {/* Analysis — strengths/weaknesses first (the "why"), then the charts that back them up. */}
+      {activeTab === 'analysis' && analysis && (
+        <section>
           <div className={`grid gap-8 sm:grid-cols-2 ${SECTION_GAP}`}>
             <div>
               <h2 className="text-sm font-semibold text-fg">Strengths</h2>
@@ -380,15 +395,7 @@ export function DeckDetailPage() {
               )}
             </div>
           </div>
-        </>
-      )}
 
-      {/* Detailed Analysis — full width, ahead of Entries: it's the higher-priority content in
-          the page's hierarchy, and charts read better without sharing width with the card grid. */}
-      {analysis && (
-        <section className={SECTION_GAP}>
-          <h2 className="text-sm font-semibold text-fg">Detailed Analysis</h2>
-          <p className="mb-4 text-xs text-muted">Mana curve, color balance, and format legality.</p>
           <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
             <div>
               <h3 className="mb-3 text-sm font-medium text-muted">Mana Curve</h3>
@@ -415,56 +422,84 @@ export function DeckDetailPage() {
 
       {/* Entries — the editing area, now a multi-column card grid so a full decklist doesn't
           force endless single-column scrolling. */}
-      <section>
-        <h2 className="text-sm font-semibold text-fg">
-          Entries ({deck.mainDeckCount} main
-          {deck.sideboardCount > 0 ? `, ${deck.sideboardCount} sideboard` : ''}
-          {deck.maybeboardCount > 0 ? `, ${deck.maybeboardCount} maybeboard` : ''})
-        </h2>
-        <p className="mb-4 text-xs text-muted">
-          Add, move, or remove cards. Estimated value: ${totalValueUsd.toFixed(2)}
-        </p>
+      {activeTab === 'entries' && (
+        <section>
+          <h2 className="text-sm font-semibold text-fg">
+            Entries ({deck.mainDeckCount} main
+            {deck.sideboardCount > 0 ? `, ${deck.sideboardCount} sideboard` : ''}
+            {deck.maybeboardCount > 0 ? `, ${deck.maybeboardCount} maybeboard` : ''})
+          </h2>
+          <p className="mb-4 text-xs text-muted">
+            Add, move, or remove cards. Estimated value: ${totalValueUsd.toFixed(2)}
+          </p>
 
-        <AddCardToDeckForm onAdd={handleAddCard} />
-        {entryError && <p className="mb-3 text-sm text-danger">{entryError}</p>}
+          <AddCardToDeckForm onAdd={handleAddCard} />
+          {entryError && <p className="mb-3 text-sm text-danger">{entryError}</p>}
 
-        {commanderEntries.length > 0 && (
+          {commanderEntries.length > 0 && (
+            <EntryGroup
+              title="Commander"
+              section="Commander"
+              entries={commanderEntries}
+              onRemove={handleRemoveEntry}
+              onMove={handleMoveEntry}
+            />
+          )}
           <EntryGroup
-            title="Commander"
-            section="Commander"
-            entries={commanderEntries}
+            title="Main Deck"
+            section="Main"
+            entries={mainEntries}
+            groupByType
             onRemove={handleRemoveEntry}
             onMove={handleMoveEntry}
           />
-        )}
-        <EntryGroup
-          title="Main Deck"
-          section="Main"
-          entries={mainEntries}
-          groupByType
-          onRemove={handleRemoveEntry}
-          onMove={handleMoveEntry}
-        />
-        {sideboardEntries.length > 0 && (
-          <EntryGroup
-            title="Sideboard"
-            section="Sideboard"
-            entries={sideboardEntries}
-            onRemove={handleRemoveEntry}
-            onMove={handleMoveEntry}
-          />
-        )}
-        {maybeboardEntries.length > 0 && (
-          <EntryGroup
-            title="Maybeboard"
-            section="Maybeboard"
-            caption="not counted in analysis"
-            entries={maybeboardEntries}
-            onRemove={handleRemoveEntry}
-            onMove={handleMoveEntry}
-          />
-        )}
-      </section>
+          {sideboardEntries.length > 0 && (
+            <EntryGroup
+              title="Sideboard"
+              section="Sideboard"
+              entries={sideboardEntries}
+              onRemove={handleRemoveEntry}
+              onMove={handleMoveEntry}
+            />
+          )}
+          {maybeboardEntries.length > 0 && (
+            <EntryGroup
+              title="Maybeboard"
+              section="Maybeboard"
+              caption="not counted in analysis"
+              entries={maybeboardEntries}
+              onRemove={handleRemoveEntry}
+              onMove={handleMoveEntry}
+            />
+          )}
+        </section>
+      )}
+    </div>
+  )
+}
+
+function TabBar<T extends string>({
+  active,
+  onChange,
+  tabs,
+}: {
+  active: T
+  onChange: (tab: T) => void
+  tabs: { key: T; label: string }[]
+}) {
+  return (
+    <div className="mb-8 flex gap-6 border-b border-border">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => onChange(tab.key)}
+          className={`-mb-px border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus-visible:outline-none ${
+            active === tab.key ? 'border-accent text-fg' : 'border-transparent text-muted hover:text-fg'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
     </div>
   )
 }
