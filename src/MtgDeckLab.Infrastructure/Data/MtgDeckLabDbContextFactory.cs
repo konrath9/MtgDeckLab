@@ -9,7 +9,7 @@ public class MtgDeckLabDbContextFactory : IDesignTimeDbContextFactory<MtgDeckLab
     public MtgDeckLabDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<MtgDeckLabDbContext>()
-            .UseNpgsql("Host=localhost;Port=5433;Database=mtgdecklab;Username=mtgdecklab;Password=mtgdecklab_dev")
+            .UseNpgsql("Host=localhost;Port=5434;Database=mtgdecklab;Username=mtgdecklab;Password=mtgdecklab_dev")
             .Options;
 
         return new MtgDeckLabDbContext(options);
