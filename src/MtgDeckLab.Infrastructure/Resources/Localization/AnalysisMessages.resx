@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="validation.commander.deck_size" xml:space="preserve">
+    <value>Commander decks must have exactly 100 cards ({total} found).</value>
+  </data>
+  <data name="validation.commander.singleton" xml:space="preserve">
+    <value>'{card}' has {quantity} copies — Commander is singleton (max 1 for non-basics).</value>
+  </data>
+  <data name="validation.commander.missing" xml:space="preserve">
+    <value>No commander designated. Tag the commander with #Commander.</value>
+  </data>
+  <data name="validation.commander.too_many" xml:space="preserve">
+    <value>A deck can have at most 2 commanders (partner rule).</value>
+  </data>
+  <data name="validation.commander.not_legendary" xml:space="preserve">
+    <value>'{card}' is not Legendary and cannot be a commander.</value>
+  </data>
+  <data name="validation.commander.invalid_type" xml:space="preserve">
+    <value>'{card}' must be a creature or planeswalker to be a commander.</value>
+  </data>
+  <data name="validation.commander.color_identity" xml:space="preserve">
+    <value>'{card}' has color identity outside the commander's ({colors}).</value>
+  </data>
+  <data name="validation.constructed.min_size" xml:space="preserve">
+    <value>Deck must have at least 60 cards ({total} found).</value>
+  </data>
+  <data name="validation.constructed.sideboard_size" xml:space="preserve">
+    <value>Sideboard must have at most 15 cards ({total} found).</value>
+  </data>
+  <data name="validation.constructed.max_copies" xml:space="preserve">
+    <value>'{card}' has {quantity} copies (max 4 for non-basics).</value>
+  </data>
+  <data name="coverage.role_low" xml:space="preserve">
+    <value>Only {quantity} {role} card(s) detected. Consider adding more.</value>
+  </data>
+  <data name="score.high_average_cmc.commander" xml:space="preserve">
+    <value>High average CMC ({averageCmc}). Consider adding more low-cost cards.</value>
+  </data>
+  <data name="score.high_average_cmc.constructed" xml:space="preserve">
+    <value>High average CMC ({averageCmc}) for a constructed format.</value>
+  </data>
+  <data name="score.few_lands.commander" xml:space="preserve">
+    <value>Too few lands ({lands}). Commander decks typically run 35-40 lands.</value>
+  </data>
+  <data name="score.few_lands.constructed" xml:space="preserve">
+    <value>Very few lands ({lands}). Minimum 20 lands is recommended for most decks.</value>
+  </data>
+  <data name="score.no_win_condition" xml:space="preserve">
+    <value>No creatures or planeswalkers detected. Ensure you have a win condition.</value>
+  </data>
+  <data name="score.many_colors" xml:space="preserve">
+    <value>{colors}-color decks require strong mana fixing to be consistent.</value>
+  </data>
+  <data name="synergy.off_theme" xml:space="preserve">
+    <value>'{card}' has no detected role or synergy with the deck's dominant theme ({theme}) — consider whether it fits the plan.</value>
+  </data>
+  <data name="enum.CardRole.Ramp" xml:space="preserve">
+    <value>ramp</value>
+  </data>
+  <data name="enum.CardRole.Removal" xml:space="preserve">
+    <value>removal</value>
+  </data>
+  <data name="enum.CardRole.BoardWipe" xml:space="preserve">
+    <value>board wipe</value>
+  </data>
+  <data name="enum.CardRole.CardDraw" xml:space="preserve">
+    <value>card draw</value>
+  </data>
+  <data name="enum.CardRole.Tutor" xml:space="preserve">
+    <value>tutor</value>
+  </data>
+  <data name="enum.CardRole.Protection" xml:space="preserve">
+    <value>protection</value>
+  </data>
+  <data name="enum.CardRole.Recursion" xml:space="preserve">
+    <value>recursion</value>
+  </data>
+  <data name="enum.CardRole.Interaction" xml:space="preserve">
+    <value>interaction</value>
+  </data>
+  <data name="enum.SynergyTag.Aristocrats" xml:space="preserve">
+    <value>Aristocrats</value>
+  </data>
+  <data name="enum.SynergyTag.Tokens" xml:space="preserve">
+    <value>Tokens</value>
+  </data>
+  <data name="enum.SynergyTag.Lifegain" xml:space="preserve">
+    <value>Lifegain</value>
+  </data>
+  <data name="enum.SynergyTag.GraveyardRecursion" xml:space="preserve">
+    <value>Graveyard Recursion</value>
+  </data>
+  <data name="enum.SynergyTag.SpellsMatter" xml:space="preserve">
+    <value>Spells Matter</value>
+  </data>
+  <data name="enum.SynergyTag.PlusOneCounters" xml:space="preserve">
+    <value>+1/+1 Counters</value>
+  </data>
+  <data name="enum.SynergyTag.ArtifactsMatter" xml:space="preserve">
+    <value>Artifacts Matter</value>
+  </data>
+</root>

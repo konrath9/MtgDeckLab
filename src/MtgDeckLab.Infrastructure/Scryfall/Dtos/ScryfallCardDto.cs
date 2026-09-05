@@ -7,8 +7,24 @@ internal sealed class ScryfallCardDto
     [JsonPropertyName("id")]
     public Guid Id { get; set; }
 
+    // Identidade da carta independente de impressão E de idioma — é por ela que as traduções
+    // vindas do bulk multilíngue casam com a linha sincronizada do bulk em inglês.
+    [JsonPropertyName("oracle_id")]
+    public Guid OracleId { get; set; }
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
+    /// <summary>Idioma desta impressão (código Scryfall: "en", "pt", "es", ...).</summary>
+    [JsonPropertyName("lang")]
+    public string Lang { get; set; } = "en";
+
+    /// <summary>Nome como impresso na carta neste idioma. Ausente em impressões em inglês.</summary>
+    [JsonPropertyName("printed_name")]
+    public string? PrintedName { get; set; }
+
+    [JsonPropertyName("printed_type_line")]
+    public string? PrintedTypeLine { get; set; }
 
     [JsonPropertyName("layout")]
     public string Layout { get; set; } = "normal";
@@ -69,4 +85,12 @@ internal sealed class ScryfallCardFaceDto
 
     [JsonPropertyName("colors")]
     public List<string>? Colors { get; set; }
+
+    // Cartas de duas faces traduzidas trazem o nome impresso por face; o topo do objeto não tem
+    // printed_name nesse caso.
+    [JsonPropertyName("printed_name")]
+    public string? PrintedName { get; set; }
+
+    [JsonPropertyName("printed_type_line")]
+    public string? PrintedTypeLine { get; set; }
 }

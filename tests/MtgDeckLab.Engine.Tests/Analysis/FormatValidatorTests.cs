@@ -37,7 +37,7 @@ public class FormatValidatorTests
         var result = FormatValidator.Validate(deck);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("100 cards"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderDeckSize));
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class FormatValidatorTests
         var result = FormatValidator.Validate(deck);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("Sol Ring") && e.Contains("singleton"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderSingleton, "Sol Ring"));
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class FormatValidatorTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().NotContain(e => e.Contains("Forest"));
+        result.Errors.Should().NotContain(e => e.MentionsCard("Forest"));
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class FormatValidatorTests
         var result = FormatValidator.Validate(deck);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("not Legendary"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderNotLegendary));
     }
 
     // ── Constructed ────────────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ public class FormatValidatorTests
         var result = FormatValidator.Validate(deck);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("60 cards"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.ConstructedMinSize));
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class FormatValidatorTests
         var result = FormatValidator.Validate(deck);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("Lightning Bolt") && e.Contains("max 4"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.ConstructedMaxCopies, "Lightning Bolt"));
     }
 
     [Fact]
@@ -158,6 +158,6 @@ public class FormatValidatorTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().NotContain(e => e.Contains("Forest"));
+        result.Errors.Should().NotContain(e => e.MentionsCard("Forest"));
     }
 }

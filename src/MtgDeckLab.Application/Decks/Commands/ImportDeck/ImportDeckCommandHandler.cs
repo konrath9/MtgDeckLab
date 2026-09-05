@@ -36,15 +36,19 @@ public class ImportDeckCommandHandler : IRequestHandler<ImportDeckCommand, Impor
         var distinctNames = parsedEntries.Select(e => e.CardName).Distinct();
         var cards = await _cardRepo.FindByNamesAsync(distinctNames, cancellationToken);
 
-        // Modal double-faced/split cards are stored under their full "Front // Back" name, but a
-        // decklist entry only ever gives the front face — index by both so lookup by either works.
+        // Uma decklist pode vir em qualquer idioma sincronizado (ou misturada), então cada carta
+        // entra no índice pelo nome em inglês E por cada nome traduzido que tenha.
         var cardsByName = new Dictionary<string, Card>(StringComparer.OrdinalIgnoreCase);
         foreach (var card in cards)
-        {
-            cardsByName[card.Name] = card;
-            var frontFace = card.Name.Split(" // ")[0];
-            if (frontFace != card.Name) cardsByName[frontFace] = card;
-        }
+            foreach (var name in card.LocalizedNames.Select(n => n.Name).Append(card.Name))
+            {
+                cardsByName[name] = card;
+
+                // Modal double-faced/split cards are stored under their full "Front // Back" name,
+                // but a decklist entry only ever gives the front face.
+                var frontFace = name.Split(" // ")[0];
+                if (frontFace != name) cardsByName[frontFace] = card;
+            }
 
         var deck = new Deck(request.DeckName, request.Format, request.UserId, request.Description);
         var unresolved = new List<UnresolvedCardName>();

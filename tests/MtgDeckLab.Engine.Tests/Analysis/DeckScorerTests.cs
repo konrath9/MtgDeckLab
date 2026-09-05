@@ -122,6 +122,8 @@ public class DeckScorerTests
         var deck = AnalysisTestHelpers.ConstructedDeck(mainDeck);
         var score = ScoreDeck(deck);
 
-        score.Warnings.Should().Contain(w => w.Contains("CMC"));
+        score.Warnings.Should().Contain(w =>
+            w.Is(AnalysisMessageCodes.ScoreHighAverageCmcCommander) ||
+            w.Is(AnalysisMessageCodes.ScoreHighAverageCmcConstructed));
     }
 }

@@ -107,30 +107,37 @@ public static class DeckScorer
         _ => "F"
     };
 
-    private static IReadOnlyList<string> BuildWarnings(
+    private static IReadOnlyList<AnalysisMessage> BuildWarnings(
         Format format,
         ManaCurve manaCurve,
         TypeDistribution types,
         ColorDistribution colors)
     {
-        var warnings = new List<string>();
+        var warnings = new List<AnalysisMessage>();
 
+        // Números vão crus nos argumentos (não formatados): quem renderiza a frase é que sabe a
+        // cultura do usuário — "3.42" em en-US e "3,42" em pt-BR.
         var avgCmc = (double)manaCurve.AverageCmc;
         if (format == Format.Commander && avgCmc > 4.0)
-            warnings.Add($"High average CMC ({manaCurve.AverageCmc:F2}). Consider adding more low-cost cards.");
+            warnings.Add(AnalysisMessage.Of(
+                AnalysisMessageCodes.ScoreHighAverageCmcCommander, ("averageCmc", manaCurve.AverageCmc)));
         else if (format != Format.Commander && avgCmc > 3.5)
-            warnings.Add($"High average CMC ({manaCurve.AverageCmc:F2}) for a constructed format.");
+            warnings.Add(AnalysisMessage.Of(
+                AnalysisMessageCodes.ScoreHighAverageCmcConstructed, ("averageCmc", manaCurve.AverageCmc)));
 
         if (format == Format.Commander && types.Lands < 30)
-            warnings.Add($"Too few lands ({types.Lands}). Commander decks typically run 35-40 lands.");
+            warnings.Add(AnalysisMessage.Of(
+                AnalysisMessageCodes.ScoreFewLandsCommander, ("lands", types.Lands)));
         else if (format != Format.Commander && types.Lands < 18)
-            warnings.Add($"Very few lands ({types.Lands}). Minimum 20 lands is recommended for most decks.");
+            warnings.Add(AnalysisMessage.Of(
+                AnalysisMessageCodes.ScoreFewLandsConstructed, ("lands", types.Lands)));
 
         if (types.Creatures == 0 && types.Planeswalkers == 0)
-            warnings.Add("No creatures or planeswalkers detected. Ensure you have a win condition.");
+            warnings.Add(AnalysisMessage.Of(AnalysisMessageCodes.ScoreNoWinCondition));
 
         if (colors.CardCount.Count >= 4)
-            warnings.Add($"{colors.CardCount.Count}-color decks require strong mana fixing to be consistent.");
+            warnings.Add(AnalysisMessage.Of(
+                AnalysisMessageCodes.ScoreManyColors, ("colors", colors.CardCount.Count)));
 
         return warnings.AsReadOnly();
     }

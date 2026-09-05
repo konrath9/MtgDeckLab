@@ -7,12 +7,21 @@ using Microsoft.Extensions.Logging;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
 using MtgDeckLab.Domain.Enums;
+using MtgDeckLab.Domain.Localization;
 using MtgDeckLab.Infrastructure.Scryfall.Dtos;
 
 namespace MtgDeckLab.Infrastructure.Scryfall;
 
 public sealed class ScryfallSyncService : IScryfallSyncService
 {
+    // "oracle_cards": uma linha por carta, sempre em inglês — a base da tabela de cartas.
+    private const string OracleBulkType = "oracle_cards";
+
+    // "all_cards": toda impressão em todo idioma. É o único bulk que traz nome traduzido, e o
+    // preço disso é o tamanho (alguns GB). Por isso as traduções são um sync separado, com seu
+    // próprio agendamento — não algo que roda junto do sync de cartas.
+    private const string AllCardsBulkType = "all_cards";
+
     private static readonly string[] SkippedLayouts =
         ["token", "art_series", "emblem", "double_faced_token"];
 
@@ -33,10 +42,10 @@ public sealed class ScryfallSyncService : IScryfallSyncService
     public async IAsyncEnumerable<Card> StreamOracleCardsAsync(
         [EnumeratorCancellation] CancellationToken ct = default)
     {
-        var downloadUri = await GetOracleBulkUriAsync(ct);
+        var downloadUri = await GetBulkUriAsync(OracleBulkType, ct);
         if (string.IsNullOrEmpty(downloadUri))
         {
-            _logger.LogError("Scryfall oracle_cards bulk URI not found.");
+            _logger.LogError("Scryfall {BulkType} bulk URI not found.", OracleBulkType);
             yield break;
         }
 
@@ -51,7 +60,68 @@ public sealed class ScryfallSyncService : IScryfallSyncService
         }
     }
 
-    private async Task<string?> GetOracleBulkUriAsync(CancellationToken ct)
+    public async IAsyncEnumerable<CardTranslation> StreamCardTranslationsAsync(
+        IReadOnlyCollection<string> languages,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var wanted = languages
+            .Select(CardLanguage.Normalize)
+            .Where(l => l != CardLanguage.English)
+            .ToHashSet();
+
+        if (wanted.Count == 0) yield break;
+
+        var downloadUri = await GetBulkUriAsync(AllCardsBulkType, ct);
+        if (string.IsNullOrEmpty(downloadUri))
+        {
+            _logger.LogError("Scryfall {BulkType} bulk URI not found.", AllCardsBulkType);
+            yield break;
+        }
+
+        _logger.LogInformation(
+            "Downloading Scryfall multilingual bulk data from {Uri} for languages {Languages}.",
+            downloadUri, string.Join(", ", wanted));
+
+        // A mesma carta reaparece a cada reimpressão; só a primeira ocorrência por (oracle, idioma)
+        // interessa. O set fica na casa das dezenas de milhares de entradas — barato perto de
+        // materializar o arquivo inteiro.
+        var seen = new HashSet<(Guid OracleId, string Language)>();
+
+        await foreach (var dto in StreamCardDtosAsync(downloadUri, ct))
+        {
+            if (SkippedLayouts.Contains(dto.Layout)) continue;
+            if (dto.OracleId == Guid.Empty) continue;
+
+            var language = CardLanguage.Normalize(dto.Lang);
+            if (!wanted.Contains(language)) continue;
+            if (!seen.Add((dto.OracleId, language))) continue;
+
+            var printedName = ResolvePrintedName(dto);
+            if (printedName is null) continue;
+
+            yield return new CardTranslation(
+                dto.OracleId, language, printedName, ResolvePrintedTypeLine(dto));
+        }
+    }
+
+    // Cartas de duas faces não trazem printed_name no topo — o nome traduzido está por face, e o
+    // formato "Frente // Verso" espelha o nome canônico em inglês que já guardamos.
+    private static string? ResolvePrintedName(ScryfallCardDto dto)
+    {
+        if (!string.IsNullOrWhiteSpace(dto.PrintedName)) return dto.PrintedName;
+
+        var faceNames = dto.CardFaces?
+            .Select(f => f.PrintedName)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToList();
+
+        return faceNames is { Count: > 0 } ? string.Join(" // ", faceNames) : null;
+    }
+
+    private static string? ResolvePrintedTypeLine(ScryfallCardDto dto) =>
+        dto.PrintedTypeLine ?? dto.CardFaces?.FirstOrDefault()?.PrintedTypeLine;
+
+    private async Task<string?> GetBulkUriAsync(string bulkType, CancellationToken ct)
     {
         try
         {
@@ -59,7 +129,7 @@ public sealed class ScryfallSyncService : IScryfallSyncService
                 "bulk-data", JsonOpts, ct);
 
             return response?.Data
-                .FirstOrDefault(d => d.Type == "oracle_cards")
+                .FirstOrDefault(d => d.Type == bulkType)
                 ?.JsonlDownloadUri;
         }
         catch (Exception ex)
@@ -108,6 +178,7 @@ public sealed class ScryfallSyncService : IScryfallSyncService
 
             return new Card(
                 dto.Id,
+                dto.OracleId,
                 dto.Name,
                 manaCost,
                 dto.Cmc,

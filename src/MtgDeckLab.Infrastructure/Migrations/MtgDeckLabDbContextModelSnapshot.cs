@@ -49,6 +49,10 @@ namespace MtgDeckLab.Infrastructure.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("name");
 
+                    b.Property<Guid>("OracleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("oracle_id");
+
                     b.Property<string>("OracleText")
                         .HasColumnType("text")
                         .HasColumnName("oracle_text");
@@ -120,10 +124,45 @@ namespace MtgDeckLab.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OracleId");
+
                     b.HasIndex("ScryfallId")
                         .IsUnique();
 
                     b.ToTable("cards", (string)null);
+                });
+
+            modelBuilder.Entity("MtgDeckLab.Domain.Entities.CardLocalizedName", b =>
+                {
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("card_id");
+
+                    b.Property<string>("Language")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("language");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("PrintedTypeLine")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("printed_type_line");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("CardId", "Language");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("card_localized_names", (string)null);
                 });
 
             modelBuilder.Entity("MtgDeckLab.Domain.Entities.Deck", b =>
@@ -317,6 +356,15 @@ namespace MtgDeckLab.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("MtgDeckLab.Domain.Entities.CardLocalizedName", b =>
+                {
+                    b.HasOne("MtgDeckLab.Domain.Entities.Card", null)
+                        .WithMany("LocalizedNames")
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MtgDeckLab.Domain.Entities.DeckEntry", b =>
                 {
                     b.HasOne("MtgDeckLab.Domain.Entities.Deck", null)
@@ -342,6 +390,11 @@ namespace MtgDeckLab.Infrastructure.Migrations
                         .HasForeignKey("DeckVersionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MtgDeckLab.Domain.Entities.Card", b =>
+                {
+                    b.Navigation("LocalizedNames");
                 });
 
             modelBuilder.Entity("MtgDeckLab.Domain.Entities.Deck", b =>

@@ -18,6 +18,8 @@ using MtgDeckLab.Application.Decks.Queries.GetDeckRecommendations;
 using MtgDeckLab.Application.Decks.Queries.GetDeckSimulation;
 using MtgDeckLab.Application.Decks.Queries.ListDecks;
 using MtgDeckLab.Application.Decks.Queries.ListDeckVersions;
+using MtgDeckLab.Application.Localization;
+using MtgDeckLab.Domain.Exceptions;
 using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Engine.Analysis.Models;
 
@@ -29,8 +31,13 @@ namespace MtgDeckLab.API.Controllers;
 public class DecksController : ControllerBase
 {
     private readonly ISender _sender;
+    private readonly IApiMessageLocalizer _messages;
 
-    public DecksController(ISender sender) => _sender = sender;
+    public DecksController(ISender sender, IApiMessageLocalizer messages)
+    {
+        _sender = sender;
+        _messages = messages;
+    }
 
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -108,6 +115,16 @@ public class DecksController : ControllerBase
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+        catch (CardNotFoundException ex)
+        {
+            // O nome procurado volta no texto traduzido: quem digitou "Ilah" precisa ver o que
+            // não foi encontrado, no idioma em que está usando a aplicação.
+            return BadRequest(new
+            {
+                error = _messages.Get(ApiMessageCodes.CardNotFound, ("card", ex.CardName)),
+                code = ApiMessageCodes.CardNotFound
+            });
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
         {

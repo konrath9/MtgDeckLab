@@ -1,6 +1,7 @@
 using MediatR;
 using MtgDeckLab.Application.Decks.Queries.GetDeckById;
 using MtgDeckLab.Application.Interfaces;
+using MtgDeckLab.Application.Localization;
 
 namespace MtgDeckLab.Application.Decks.Commands.UpdateDeck;
 
@@ -8,11 +9,14 @@ public class UpdateDeckCommandHandler : IRequestHandler<UpdateDeckCommand, DeckD
 {
     private readonly IDeckRepository _deckRepo;
     private readonly ICardRepository _cardRepo;
+    private readonly ILanguageContext _language;
 
-    public UpdateDeckCommandHandler(IDeckRepository deckRepo, ICardRepository cardRepo)
+    public UpdateDeckCommandHandler(
+        IDeckRepository deckRepo, ICardRepository cardRepo, ILanguageContext language)
     {
         _deckRepo = deckRepo;
         _cardRepo = cardRepo;
+        _language = language;
     }
 
     public async Task<DeckDetail> Handle(UpdateDeckCommand request, CancellationToken cancellationToken)
@@ -25,6 +29,7 @@ public class UpdateDeckCommandHandler : IRequestHandler<UpdateDeckCommand, DeckD
         deck.UpdateDescription(request.Description);
         await _deckRepo.SaveChangesAsync(cancellationToken);
 
-        return await DeckDetailMapper.ToDetailAsync(deck, _cardRepo, cancellationToken);
+        return await DeckDetailMapper.ToDetailAsync(
+            deck, _cardRepo, _language.CardLanguage, cancellationToken);
     }
 }

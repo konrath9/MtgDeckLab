@@ -13,5 +13,5 @@ public sealed record SynergyAnalysis(
     IReadOnlyList<SynergySignal> Signals,
     SynergyTag? DominantTag,
     decimal? DominantStrength,
-    IReadOnlyList<string> LowSynergyWarnings
+    IReadOnlyList<AnalysisMessage> LowSynergyWarnings
 );

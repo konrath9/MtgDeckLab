@@ -28,7 +28,7 @@ public class CommanderColorIdentityTests
         var result = FormatValidator.Validate(deck);
 
         result.Errors.Should().Contain(e =>
-            e.Contains("Counterspell") && e.Contains("color identity"));
+            e.Is(AnalysisMessageCodes.CommanderColorIdentity, "Counterspell"));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class CommanderColorIdentityTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().NotContain(e => e.Contains("color identity"));
+        result.Errors.Should().NotContain(e => e.Is(AnalysisMessageCodes.CommanderColorIdentity));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class CommanderColorIdentityTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().NotContain(e => e.Contains("Sol Ring"));
+        result.Errors.Should().NotContain(e => e.MentionsCard("Sol Ring"));
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class CommanderColorIdentityTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().Contain(e => e.Contains("Island"));
-        result.Errors.Should().Contain(e => e.Contains("Swamp"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderColorIdentity, "Island"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderColorIdentity, "Swamp"));
     }
 
     [Fact]
@@ -116,8 +116,8 @@ public class CommanderColorIdentityTests
 
         var result = FormatValidator.Validate(deck);
 
-        result.Errors.Should().Contain(e => e.Contains("Brainstorm") && e.Contains("color identity"));
-        result.Errors.Should().NotContain(e => e.Contains("Bloodbraid Elf"));
+        result.Errors.Should().Contain(e => e.Is(AnalysisMessageCodes.CommanderColorIdentity, "Brainstorm"));
+        result.Errors.Should().NotContain(e => e.MentionsCard("Bloodbraid Elf"));
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class CommanderColorIdentityTests
         var result = FormatValidator.Validate(deck);
 
         // Deve ter warning de sem comandante, mas NÃO erro de color identity
-        result.Warnings.Should().Contain(w => w.Contains("commander"));
-        result.Errors.Should().NotContain(e => e.Contains("color identity"));
+        result.Warnings.Should().Contain(w => w.Is(AnalysisMessageCodes.CommanderMissing));
+        result.Errors.Should().NotContain(e => e.Is(AnalysisMessageCodes.CommanderColorIdentity));
     }
 }

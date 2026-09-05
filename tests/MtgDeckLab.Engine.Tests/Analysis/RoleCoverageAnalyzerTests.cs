@@ -34,7 +34,8 @@ public class RoleCoverageAnalyzerTests
         var coverage = RoleCoverageAnalyzer.Analyze(roles, Format.Modern);
 
         coverage.Warnings.Should().NotBeEmpty();
-        coverage.Warnings.Should().Contain(w => w.Contains("removal"));
+        coverage.Warnings.Should().Contain(w =>
+            w.Is(AnalysisMessageCodes.RoleCoverageLow) && w.HasArg("role", CardRole.Removal));
     }
 
     [Fact]

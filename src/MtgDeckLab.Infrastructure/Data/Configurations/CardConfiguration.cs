@@ -20,6 +20,8 @@ public class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.HasIndex(c => c.ScryfallId).IsUnique();
 
         builder.Property(c => c.ScryfallId).HasColumnName("scryfall_id").IsRequired();
+        builder.Property(c => c.OracleId).HasColumnName("oracle_id").IsRequired();
+        builder.HasIndex(c => c.OracleId);
         builder.Property(c => c.Name).HasColumnName("name").HasMaxLength(256).IsRequired();
         builder.Property(c => c.ManaCost).HasColumnName("mana_cost").HasMaxLength(128);
         // precision 10 — alguns cards de Un-sets têm cmc absurdo (ex.: Gleemax = 1.000.000).
@@ -58,6 +60,12 @@ public class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.Property<List<string>>("_subtypes")
             .HasColumnName("subtypes")
             .HasConversion(StringListConverter(), StringListComparer());
+
+        // EF acha _localizedNames como backing field de LocalizedNames por convenção.
+        builder.HasMany(c => c.LocalizedNames)
+            .WithOne()
+            .HasForeignKey(n => n.CardId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<List<T>, string> EnumListConverter<T>()

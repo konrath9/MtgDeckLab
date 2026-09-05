@@ -98,3 +98,19 @@ internal static class AnalysisTestHelpers
         Format format = Format.Modern) =>
         new("Test Deck", format, mainDeck);
 }
+
+// Mensagens do Engine são código + argumentos, nunca frase pronta (a frase vive nos catálogos de
+// tradução) — os testes asseveram sobre o código e sobre o argumento, que é o contrato real.
+internal static class AnalysisMessageAssertions
+{
+    public static bool Is(this AnalysisMessage message, string code) => message.Code == code;
+
+    public static bool Is(this AnalysisMessage message, string code, string cardName) =>
+        message.Code == code && message.HasArg("card", cardName);
+
+    public static bool HasArg(this AnalysisMessage message, string key, object value) =>
+        message.Args.TryGetValue(key, out var actual) && Equals(actual, value);
+
+    public static bool MentionsCard(this AnalysisMessage message, string cardName) =>
+        message.HasArg("card", cardName);
+}

@@ -36,8 +36,9 @@ public static class SynergyAnalyzer
         // (remoção, mana rock) legitimamente não mencionam "sacrifice"/"token"/etc. no texto.
         var warnings = entries
             .Where(e => e.Roles.Count == 0 && e.SynergyTags.Count == 0)
-            .Select(e => $"'{e.CardName}' has no detected role or synergy with the deck's dominant " +
-                         $"theme ({dominant.Tag}) — consider whether it fits the plan.")
+            .Select(e => AnalysisMessage.Of(
+                AnalysisMessageCodes.SynergyOffTheme,
+                ("card", e.CardName), ("theme", dominant.Tag)))
             .ToList();
 
         return new SynergyAnalysis(signals, dominant.Tag, dominant.Strength, warnings);

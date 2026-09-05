@@ -38,7 +38,7 @@ public static class RoleCoverageAnalyzer
     {
         var thresholds = format == Format.Commander ? CommanderThresholds : ConstructedThresholds;
         var entries = new List<CoverageEntry>();
-        var warnings = new List<string>();
+        var warnings = new List<AnalysisMessage>();
 
         foreach (var role in thresholds.Keys.OrderBy(r => r))
         {
@@ -51,16 +51,10 @@ public static class RoleCoverageAnalyzer
             entries.Add(new CoverageEntry(role, quantity, status));
 
             if (status == CoverageStatus.Red)
-                warnings.Add($"Only {quantity} {RoleLabel(role)} card(s) detected. Consider adding more.");
+                warnings.Add(AnalysisMessage.Of(
+                    AnalysisMessageCodes.RoleCoverageLow, ("role", role), ("quantity", quantity)));
         }
 
         return new RoleCoverage(entries, warnings);
     }
-
-    private static string RoleLabel(CardRole role) => role switch
-    {
-        CardRole.CardDraw => "card draw",
-        CardRole.BoardWipe => "board wipe",
-        _ => role.ToString().ToLowerInvariant()
-    };
 }

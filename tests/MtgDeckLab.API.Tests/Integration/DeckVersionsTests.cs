@@ -45,6 +45,7 @@ public class DeckVersionsTests : IClassFixture<ApiWebApplicationFactory>
         var cardRepo = scope.ServiceProvider.GetRequiredService<ICardRepository>();
         var card = new Card(
             scryfallId: Guid.NewGuid(),
+            oracleId: Guid.NewGuid(),
             name: name,
             manaCost: "{R}",
             cmc: 1,

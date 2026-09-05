@@ -1,5 +1,6 @@
 using MediatR;
 using MtgDeckLab.Application.Interfaces;
+using MtgDeckLab.Domain.Exceptions;
 
 namespace MtgDeckLab.Application.Decks.Commands.UpsertDeckEntry;
 
@@ -23,7 +24,7 @@ public class UpsertDeckEntryCommandHandler : IRequestHandler<UpsertDeckEntryComm
 
         var card = await _cardRepo.FindByNameAsync(request.CardName, cancellationToken);
         if (card is null)
-            throw new InvalidOperationException($"Card '{request.CardName}' not found.");
+            throw new CardNotFoundException(request.CardName);
 
         deck.SetEntryQuantity(card.Id, request.Quantity, request.Section);
         await _deckRepo.SaveChangesAsync(cancellationToken);

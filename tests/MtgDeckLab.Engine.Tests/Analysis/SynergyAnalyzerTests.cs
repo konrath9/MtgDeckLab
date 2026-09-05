@@ -52,9 +52,9 @@ public class SynergyAnalyzerTests
         var result = SynergyAnalyzer.Analyze(entries);
 
         // Vanilla Bear não tem role nem synergy tag -> sinalizada.
-        result.LowSynergyWarnings.Should().ContainSingle(w => w.Contains("Vanilla Bear"));
+        result.LowSynergyWarnings.Should().ContainSingle(w => w.MentionsCard("Vanilla Bear"));
         // Doom Blade não bate na tag dominante (Aristocrats), mas tem CardRole.Removal -> não sinalizada.
-        result.LowSynergyWarnings.Should().NotContain(w => w.Contains("Doom Blade"));
+        result.LowSynergyWarnings.Should().NotContain(w => w.MentionsCard("Doom Blade"));
     }
 
     [Fact]

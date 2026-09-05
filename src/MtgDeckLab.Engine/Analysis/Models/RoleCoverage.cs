@@ -13,4 +13,4 @@ public sealed record CoverageEntry(CardRole Role, int Quantity, CoverageStatus S
 
 // Entries cobre um subconjunto fixo de CardRole (os papéis com limiares definidos em
 // RoleCoverageAnalyzer) — não é 1:1 com todo o enum CardRole necessariamente.
-public sealed record RoleCoverage(IReadOnlyList<CoverageEntry> Entries, IReadOnlyList<string> Warnings);
+public sealed record RoleCoverage(IReadOnlyList<CoverageEntry> Entries, IReadOnlyList<AnalysisMessage> Warnings);

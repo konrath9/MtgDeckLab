@@ -12,38 +12,51 @@ public class CardRepository : ICardRepository
 
     public CardRepository(MtgDeckLabDbContext context) => _context = context;
 
+    // Toda leitura que devolve cartas pra exibição traz junto os nomes traduzidos: é o que permite
+    // à camada de cima resolver Card.NameIn(idioma) sem uma segunda ida ao banco por carta.
+    private IQueryable<Card> CardsWithNames => _context.Cards.Include(c => c.LocalizedNames);
+
     public async Task<Card?> FindByNameAsync(string name, CancellationToken ct = default)
     {
         var lower = name.ToLowerInvariant();
-        var exact = await _context.Cards.FirstOrDefaultAsync(c => c.Name.ToLower() == lower, ct);
+
+        var exact = await CardsWithNames.FirstOrDefaultAsync(
+            c => c.Name.ToLower() == lower || c.LocalizedNames.Any(n => n.Name.ToLower() == lower), ct);
         if (exact is not null) return exact;
 
         // Modal double-faced / split cards are stored as "Front // Back" (their full Scryfall
         // name) — decklists and manual entry only ever reference the front face.
-        return await _context.Cards
-            .FirstOrDefaultAsync(c => c.Name.ToLower().StartsWith(lower + " // "), ct);
+        var prefix = lower + " // ";
+        return await CardsWithNames.FirstOrDefaultAsync(
+            c => c.Name.ToLower().StartsWith(prefix) ||
+                 c.LocalizedNames.Any(n => n.Name.ToLower().StartsWith(prefix)), ct);
     }
 
     public async Task<IReadOnlyList<Card>> FindByNamesAsync(IEnumerable<string> names, CancellationToken ct = default)
     {
         var lowerNames = names.Select(n => n.ToLowerInvariant()).ToHashSet();
 
-        var exactMatches = await _context.Cards
-            .Where(c => lowerNames.Contains(c.Name.ToLower()))
+        var exactMatches = await CardsWithNames
+            .Where(c => lowerNames.Contains(c.Name.ToLower()) ||
+                        c.LocalizedNames.Any(n => lowerNames.Contains(n.Name.ToLower())))
             .ToListAsync(ct);
 
-        var matchedNames = exactMatches.Select(c => c.Name.ToLowerInvariant()).ToHashSet();
+        var matchedNames = exactMatches
+            .SelectMany(c => c.LocalizedNames.Select(n => n.Name).Append(c.Name))
+            .Select(n => n.ToLowerInvariant())
+            .ToHashSet();
+
         var stillMissing = lowerNames.Where(n => !matchedNames.Contains(n)).ToHashSet();
         if (stillMissing.Count == 0) return exactMatches;
 
         // Same front-face fallback as FindByNameAsync, batched: pull the (small) set of
         // double-faced/split cards once and match front names in memory.
-        var dfcCandidates = await _context.Cards
-            .Where(c => c.Name.Contains(" // "))
+        var dfcCandidates = await CardsWithNames
+            .Where(c => c.Name.Contains(" // ") || c.LocalizedNames.Any(n => n.Name.Contains(" // ")))
             .ToListAsync(ct);
 
         var frontFaceMatches = dfcCandidates
-            .Where(c => stillMissing.Contains(c.Name.Split(" // ")[0].ToLowerInvariant()));
+            .Where(c => FrontFaces(c).Any(stillMissing.Contains));
 
         return exactMatches.Concat(frontFaceMatches).ToList();
     }
@@ -51,7 +64,7 @@ public class CardRepository : ICardRepository
     public async Task<IReadOnlyList<Card>> FindByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
     {
         var idList = ids.ToList();
-        return await _context.Cards.Where(c => idList.Contains(c.Id)).ToListAsync(ct);
+        return await CardsWithNames.Where(c => idList.Contains(c.Id)).ToListAsync(ct);
     }
 
     public async Task<Card?> FindByScryfallIdAsync(Guid scryfallId, CancellationToken ct = default) =>
@@ -65,10 +78,17 @@ public class CardRepository : ICardRepository
         IReadOnlyList<Color>? colors, bool colorlessOnly,
         int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.Cards.AsQueryable();
+        var query = CardsWithNames;
 
+        // Nome casa contra o inglês OU qualquer tradução: quem digita "Ilha" acha "Island" sem
+        // precisar saber em que idioma a carta foi impressa.
         if (!string.IsNullOrWhiteSpace(name))
-            query = query.Where(c => c.Name.ToLower().Contains(name.ToLower()));
+        {
+            var lower = name.ToLower();
+            query = query.Where(c =>
+                c.Name.ToLower().Contains(lower) ||
+                c.LocalizedNames.Any(n => n.Name.ToLower().Contains(lower)));
+        }
 
         if (!string.IsNullOrWhiteSpace(type))
             query = query.Where(c => c.TypeLine.ToLower().Contains(type.ToLower()));
@@ -99,7 +119,7 @@ public class CardRepository : ICardRepository
         return (items, totalCount);
     }
 
-    // "Subset of" (card's color identity ⊆ allowedColorIdentity) traduz pra `<@` no Postgres via
+    // "Subset of" (color identity da carta ⊆ allowedColorIdentity) traduz pra `<@` no Postgres via
     // o padrão array.All(x => otherArray.Contains(x)) que o provider Npgsql reconhece.
     public async Task<IReadOnlyList<Card>> FindRecommendationCandidatesAsync(
         IReadOnlyList<Color> allowedColorIdentity, IReadOnlyCollection<Guid> excludeCardIds,
@@ -134,9 +154,14 @@ public class CardRepository : ICardRepository
 
         var toAdd = cardList.Where(c => !existingById.ContainsKey(c.ScryfallId)).ToList();
 
-        // Update prices for cards that already exist
         foreach (var incoming in cardList.Where(c => existingById.ContainsKey(c.ScryfallId)))
-            existingById[incoming.ScryfallId].UpdatePrices(incoming.PriceUsd, incoming.PriceUsdFoil);
+        {
+            var existing = existingById[incoming.ScryfallId];
+            existing.UpdatePrices(incoming.PriceUsd, incoming.PriceUsdFoil);
+            // Linhas gravadas antes de oracle_id existir ganham o seu no primeiro sync seguinte —
+            // sem isso elas nunca casariam com nenhuma tradução.
+            existing.SyncOracleId(incoming.OracleId);
+        }
 
         if (toAdd.Count > 0)
             await _context.Cards.AddRangeAsync(toAdd, ct);
@@ -154,4 +179,53 @@ public class CardRepository : ICardRepository
             throw;
         }
     }
+
+    public async Task<int> UpsertTranslationsAsync(
+        IReadOnlyCollection<CardTranslation> translations, CancellationToken ct = default)
+    {
+        if (translations.Count == 0) return 0;
+
+        var oracleIds = translations.Select(t => t.OracleId).Distinct().ToList();
+
+        var cards = await _context.Cards
+            .Include(c => c.LocalizedNames)
+            .Where(c => oracleIds.Contains(c.OracleId))
+            .ToListAsync(ct);
+
+        // Uma mesma oracle id pode ter mais de uma linha na tabela de cartas (impressões que o
+        // sync manteve) — todas recebem o mesmo nome traduzido.
+        var cardsByOracleId = cards
+            .GroupBy(c => c.OracleId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var applied = 0;
+        foreach (var translation in translations)
+        {
+            if (!cardsByOracleId.TryGetValue(translation.OracleId, out var matches)) continue;
+
+            foreach (var card in matches)
+                card.SetLocalizedName(translation.Language, translation.Name, translation.PrintedTypeLine);
+
+            applied++;
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            _context.ChangeTracker.Clear();
+            throw;
+        }
+
+        return applied;
+    }
+
+    private static IEnumerable<string> FrontFaces(Card card) =>
+        card.LocalizedNames
+            .Select(n => n.Name)
+            .Append(card.Name)
+            .Where(n => n.Contains(" // "))
+            .Select(n => n.Split(" // ")[0].ToLowerInvariant());
 }

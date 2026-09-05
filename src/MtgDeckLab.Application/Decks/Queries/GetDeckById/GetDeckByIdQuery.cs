@@ -18,9 +18,13 @@ public record DeckDetail(
     IReadOnlyList<DeckEntryDetail> Entries
 );
 
+// CardName é sempre o nome canônico em inglês (chave de negócio, usada por importação e
+// versionamento); LocalizedName é o nome impresso no idioma do usuário, nulo quando não há
+// tradução — o cliente exibe LocalizedName ?? CardName.
 public record DeckEntryDetail(
     Guid CardId,
     string CardName,
+    string? LocalizedName,
     int Quantity,
     DeckSection Section,
     IReadOnlyList<CardType> Types,

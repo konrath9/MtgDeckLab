@@ -15,6 +15,8 @@ public record RoleRecommendation(
 public record CardRecommendation(
     Guid CardId,
     string CardName,
+    // Nome impresso no idioma do usuário; nulo quando não há tradução (exibir CardName).
+    string? LocalizedName,
     decimal Cmc,
     IReadOnlyList<Color> ColorIdentity,
     decimal? PriceUsd,

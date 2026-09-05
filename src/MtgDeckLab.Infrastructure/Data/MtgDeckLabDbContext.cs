@@ -9,6 +9,7 @@ public class MtgDeckLabDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Card> Cards => Set<Card>();
+    public DbSet<CardLocalizedName> CardLocalizedNames => Set<CardLocalizedName>();
     public DbSet<Deck> Decks => Set<Deck>();
     public DbSet<DeckEntry> DeckEntries => Set<DeckEntry>();
     public DbSet<DeckVersion> DeckVersions => Set<DeckVersion>();

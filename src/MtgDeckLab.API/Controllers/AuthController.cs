@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MtgDeckLab.Application.Auth.Commands.Login;
 using MtgDeckLab.Application.Auth.Commands.Register;
+using MtgDeckLab.Application.Localization;
 
 namespace MtgDeckLab.API.Controllers;
 
@@ -10,8 +11,13 @@ namespace MtgDeckLab.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ISender _sender;
+    private readonly IApiMessageLocalizer _messages;
 
-    public AuthController(ISender sender) => _sender = sender;
+    public AuthController(ISender sender, IApiMessageLocalizer messages)
+    {
+        _sender = sender;
+        _messages = messages;
+    }
 
     /// <summary>Cria uma nova conta. Retorna um JWT válido por 24h.</summary>
     [HttpPost("register")]
@@ -24,9 +30,11 @@ public class AuthController : ControllerBase
             var result = await _sender.Send(new RegisterUserCommand(request.Email, request.Password), ct);
             return StatusCode(StatusCodes.Status201Created, new AuthResponse(result.UserId, result.Token));
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            return Conflict(new { error = ex.Message });
+            // A exceção do handler é diagnóstico (log); o que o usuário lê vem do catálogo, no
+            // idioma da requisição.
+            return Conflict(ErrorPayload(ApiMessageCodes.EmailAlreadyRegistered));
         }
     }
 
@@ -43,9 +51,14 @@ public class AuthController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(new { error = "Invalid email or password." });
+            return Unauthorized(ErrorPayload(ApiMessageCodes.InvalidCredentials));
         }
     }
+
+    // "error" é o texto já traduzido (o que a UI mostra) e "code" é a chave estável — um cliente
+    // que queira traduzir por conta própria não depende da frase.
+    private object ErrorPayload(string code) =>
+        new { error = _messages.Get(code), code };
 }
 
 public record AuthRequest(string Email, string Password);
