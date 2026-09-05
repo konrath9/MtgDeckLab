@@ -11,11 +11,11 @@ public sealed class DeckForAnalysis
     public IReadOnlyList<DeckAnalysisEntry> Entries => _entries.AsReadOnly();
 
     public IEnumerable<DeckAnalysisEntry> MainDeck =>
-        _entries.Where(e => !e.IsSideboard && !e.IsCommander);
+        _entries.Where(e => e.Section == DeckSection.Main);
     public IEnumerable<DeckAnalysisEntry> CommanderSlot =>
-        _entries.Where(e => e.IsCommander);
+        _entries.Where(e => e.Section == DeckSection.Commander);
     public IEnumerable<DeckAnalysisEntry> Sideboard =>
-        _entries.Where(e => e.IsSideboard);
+        _entries.Where(e => e.Section == DeckSection.Sideboard);
 
     public DeckForAnalysis(string deckName, Format format, IEnumerable<DeckAnalysisEntry> entries)
     {

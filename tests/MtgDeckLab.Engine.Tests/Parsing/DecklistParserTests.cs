@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Engine.Parsing;
 
 namespace MtgDeckLab.Engine.Tests.Parsing;
@@ -16,8 +17,7 @@ public class DecklistParserTests
         result.Entries.Should().HaveCount(1);
         result.Entries[0].Quantity.Should().Be(4);
         result.Entries[0].CardName.Should().Be("Lightning Bolt");
-        result.Entries[0].IsCommander.Should().BeFalse();
-        result.Entries[0].IsSideboard.Should().BeFalse();
+        result.Entries[0].Section.Should().Be(DeckSection.Main);
     }
 
     [Fact]
@@ -31,32 +31,32 @@ public class DecklistParserTests
     }
 
     [Fact]
-    public void Parse_CommanderTagHash_SetsIsCommander()
+    public void Parse_CommanderTagHash_SetsCommanderSection()
     {
         var result = _parser.Parse("1 Sol Ring #Commander");
 
         result.HasErrors.Should().BeFalse();
-        result.Entries[0].IsCommander.Should().BeTrue();
+        result.Entries[0].Section.Should().Be(DeckSection.Commander);
         result.Entries[0].CardName.Should().Be("Sol Ring");
     }
 
     [Fact]
-    public void Parse_CommanderTagStar_SetsIsCommander()
+    public void Parse_CommanderTagStar_SetsCommanderSection()
     {
         var result = _parser.Parse("1 Atraxa, Praetors' Voice *Commander*");
 
         result.HasErrors.Should().BeFalse();
-        result.Entries[0].IsCommander.Should().BeTrue();
+        result.Entries[0].Section.Should().Be(DeckSection.Commander);
         result.Entries[0].CardName.Should().Be("Atraxa, Praetors' Voice");
     }
 
     [Fact]
-    public void Parse_SideboardPrefix_SetsIsSideboard()
+    public void Parse_SideboardPrefix_SetsSideboardSection()
     {
         var result = _parser.Parse("SB: 2 Duress");
 
         result.HasErrors.Should().BeFalse();
-        result.Entries[0].IsSideboard.Should().BeTrue();
+        result.Entries[0].Section.Should().Be(DeckSection.Sideboard);
         result.Entries[0].Quantity.Should().Be(2);
         result.Entries[0].CardName.Should().Be("Duress");
     }
@@ -75,9 +75,9 @@ public class DecklistParserTests
 
         result.HasErrors.Should().BeFalse();
         result.Entries.Should().HaveCount(3);
-        result.Entries[0].IsSideboard.Should().BeFalse();
-        result.Entries[1].IsSideboard.Should().BeTrue();
-        result.Entries[2].IsSideboard.Should().BeTrue();
+        result.Entries[0].Section.Should().Be(DeckSection.Main);
+        result.Entries[1].Section.Should().Be(DeckSection.Sideboard);
+        result.Entries[2].Section.Should().Be(DeckSection.Sideboard);
     }
 
     [Fact]
@@ -165,9 +165,9 @@ public class DecklistParserTests
 
         result.HasErrors.Should().BeFalse();
         result.Entries.Should().HaveCount(4);
-        result.Entries[0].IsCommander.Should().BeTrue();
+        result.Entries[0].Section.Should().Be(DeckSection.Commander);
         result.Entries[0].CardName.Should().Be("Atraxa, Praetors' Voice");
-        result.Entries[3].IsSideboard.Should().BeTrue();
+        result.Entries[3].Section.Should().Be(DeckSection.Sideboard);
     }
 
     [Fact]
@@ -193,5 +193,22 @@ public class DecklistParserTests
 
         result.Entries.Should().HaveCount(2);
         result.Errors.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Parse_DefaultSection_AppliesToUntaggedLines()
+    {
+        var result = _parser.Parse("1 Sol Ring", DeckSection.Maybeboard);
+
+        result.Entries[0].Section.Should().Be(DeckSection.Maybeboard);
+    }
+
+    [Fact]
+    public void Parse_InlineCommanderTag_OverridesDefaultSection()
+    {
+        // Someone pastes a full multi-section export into the Main box — the inline tag wins.
+        var result = _parser.Parse("1 Atraxa, Praetors' Voice #Commander", DeckSection.Main);
+
+        result.Entries[0].Section.Should().Be(DeckSection.Commander);
     }
 }

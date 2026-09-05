@@ -13,8 +13,7 @@ internal static class AnalysisTestHelpers
         CardSuperType[]? supertypes = null,
         Color[]? colors = null,
         Color[]? colorIdentity = null,
-        bool isCommander = false,
-        bool isSideboard = false,
+        DeckSection section = DeckSection.Main,
         string? oracleText = null) =>
         new(
             CardName: name,
@@ -24,8 +23,7 @@ internal static class AnalysisTestHelpers
             Types: (types ?? [CardType.Instant]).AsReadOnly(),
             Supertypes: (supertypes ?? []).AsReadOnly(),
             Quantity: quantity,
-            IsCommander: isCommander,
-            IsSideboard: isSideboard,
+            Section: section,
             OracleText: oracleText
         );
 
@@ -38,8 +36,7 @@ internal static class AnalysisTestHelpers
             Types: [CardType.Land],
             Supertypes: isBasic ? [CardSuperType.Basic] : [],
             Quantity: quantity,
-            IsCommander: false,
-            IsSideboard: false
+            Section: DeckSection.Main
         );
 
     public static DeckAnalysisEntry BasicLand(Color identity, int quantity = 1)
@@ -57,14 +54,14 @@ internal static class AnalysisTestHelpers
             Array.AsReadOnly(Array.Empty<Color>()),
             identity == Color.Colorless ? Array.AsReadOnly(Array.Empty<Color>()) : new Color[] { identity }.AsReadOnly(),
             [CardType.Land], [CardSuperType.Basic],
-            quantity, false, false);
+            quantity, DeckSection.Main);
     }
 
     public static DeckAnalysisEntry Colorless(string name = "Sol Ring", decimal cmc = 1) =>
         new(name, cmc,
             Array.AsReadOnly(Array.Empty<Color>()),
             Array.AsReadOnly(Array.Empty<Color>()),
-            [CardType.Artifact], [], 1, false, false);
+            [CardType.Artifact], [], 1, DeckSection.Main);
 
     public static DeckAnalysisEntry Creature(
         string name = "Test Creature",
@@ -85,8 +82,7 @@ internal static class AnalysisTestHelpers
             Types: [CardType.Creature],
             Supertypes: [CardSuperType.Legendary],
             Quantity: 1,
-            IsCommander: true,
-            IsSideboard: false
+            Section: DeckSection.Commander
         );
 
     public static DeckForAnalysis CommanderDeck(

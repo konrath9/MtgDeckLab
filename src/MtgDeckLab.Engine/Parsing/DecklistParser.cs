@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.Engine.Parsing;
 
@@ -20,7 +21,13 @@ public sealed partial class DecklistParser
     [GeneratedRegex(@"\s+\(([A-Z0-9]{2,6})\)(?:\s+(\d+))?\s*$")]
     private static partial Regex SetCodeRegex();
 
-    public ParseResult Parse(string input)
+    /// <summary>
+    /// Parses one block of decklist text. <paramref name="defaultSection"/> is the section
+    /// assigned to lines that don't carry an explicit inline tag (SB:/#Commander/// Sideboard) —
+    /// lets a caller feed dedicated Main/Commander/Sideboard/Maybeboard textareas through the
+    /// same parser while still honoring inline tags for a fully-pasted multi-section decklist.
+    /// </summary>
+    public ParseResult Parse(string input, DeckSection defaultSection = DeckSection.Main)
     {
         var entries = new List<ParsedEntry>();
         var errors = new List<string>();
@@ -41,7 +48,7 @@ public sealed partial class DecklistParser
                 continue;
             }
 
-            if (TryParseEntry(line, inSideboard, out var entry))
+            if (TryParseEntry(line, inSideboard, defaultSection, out var entry))
                 entries.Add(entry!);
             else
                 errors.Add(line);
@@ -50,16 +57,17 @@ public sealed partial class DecklistParser
         return new ParseResult(entries, errors);
     }
 
-    private static bool TryParseEntry(string line, bool currentSectionIsSideboard, out ParsedEntry? entry)
+    private static bool TryParseEntry(
+        string line, bool currentSectionIsSideboard, DeckSection defaultSection, out ParsedEntry? entry)
     {
         entry = null;
 
-        var isSideboard = currentSectionIsSideboard;
+        var section = currentSectionIsSideboard ? DeckSection.Sideboard : defaultSection;
         var text = line;
 
         if (text.StartsWith("SB:", StringComparison.OrdinalIgnoreCase))
         {
-            isSideboard = true;
+            section = DeckSection.Sideboard;
             text = text[3..].TrimStart();
         }
 
@@ -81,12 +89,12 @@ public sealed partial class DecklistParser
         if (string.IsNullOrEmpty(remainder))
             return false;
 
-        // Strip commander tag from end
-        var isCommander = false;
+        // Strip commander tag from end — takes precedence over any other section signal, since
+        // it's the most specific explicit declaration a line can carry.
         var hashMatch = CommanderHashTagRegex().Match(remainder);
         if (hashMatch.Success)
         {
-            isCommander = true;
+            section = DeckSection.Commander;
             remainder = remainder[..hashMatch.Index];
         }
         else
@@ -94,7 +102,7 @@ public sealed partial class DecklistParser
             var starMatch = CommanderStarTagRegex().Match(remainder);
             if (starMatch.Success)
             {
-                isCommander = true;
+                section = DeckSection.Commander;
                 remainder = remainder[..starMatch.Index];
             }
         }
@@ -115,7 +123,7 @@ public sealed partial class DecklistParser
         if (string.IsNullOrEmpty(cardName))
             return false;
 
-        entry = new ParsedEntry(quantity, cardName, isCommander, isSideboard, setCode, collectorNumber);
+        entry = new ParsedEntry(quantity, cardName, section, setCode, collectorNumber);
         return true;
     }
 }

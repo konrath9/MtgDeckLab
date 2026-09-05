@@ -83,13 +83,13 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "List Deck 1",
             Format = "Modern",
-            Decklist = "4 Lightning Bolt"
+            MainDecklist = "4 Lightning Bolt"
         });
         await clientA.PostAsJsonAsync("/api/decks/import", new
         {
             Name = "List Deck 2",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
 
         var clientB = await AuthenticatedClientAsync();
@@ -97,7 +97,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Other User Deck",
             Format = "Modern",
-            Decklist = "4 Counterspell"
+            MainDecklist = "4 Counterspell"
         });
 
         var response = await clientA.GetAsync("/api/decks");
@@ -119,7 +119,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
             {
                 Name = $"Paged Deck {i}",
                 Format = "Modern",
-                Decklist = "4 Shock"
+                MainDecklist = "4 Shock"
             });
         }
 
@@ -141,7 +141,7 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Test Deck",
             Format = "Modern",
-            Decklist = "4 Lightning Bolt"
+            MainDecklist = "4 Lightning Bolt"
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -156,11 +156,11 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Burn Modern",
             Format = "Modern",
-            Decklist = "4 Lightning Bolt\n20 Mountain"
+            MainDecklist = "4 Lightning Bolt\n20 Mountain"
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var body = await response.Content.ReadFromJsonAsync<ImportDeckResponse>();
+        var body = await response.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions);
         body!.DeckId.Should().NotBeEmpty();
     }
 
@@ -172,9 +172,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "My Special Deck",
             Format = "Commander",
-            Decklist = "1 Sol Ring"
+            MainDecklist = "1 Sol Ring"
         });
-        var importBody = await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>();
+        var importBody = await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions);
 
         var response = await client.GetAsync($"/api/decks/{importBody!.DeckId}");
 
@@ -192,9 +192,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "User A Deck",
             Format = "Modern",
-            Decklist = "4 Counterspell"
+            MainDecklist = "4 Counterspell"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         // Usuário B tenta acessar
         var clientB = await AuthenticatedClientAsync();
@@ -220,9 +220,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Analysis Deck",
             Format = "Modern",
-            Decklist = "4 Lightning Bolt\n20 Mountain"
+            MainDecklist = "4 Lightning Bolt\n20 Mountain"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.GetAsync($"/api/decks/{deckId}/analysis");
 
@@ -246,9 +246,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Removal Deck",
             Format = "Modern",
-            Decklist = $"4 {cardName}"
+            MainDecklist =$"4 {cardName}"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.GetAsync($"/api/decks/{deckId}/analysis");
 
@@ -267,9 +267,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Simulation Deck",
             Format = "Modern",
-            Decklist = "20 Mountain\n20 Shock" // não resolve — deck fica vazio, exercita o caminho de guarda
+            MainDecklist = "20 Mountain\n20 Shock" // não resolve — deck fica vazio, exercita o caminho de guarda
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.GetAsync($"/api/decks/{deckId}/simulation?iterations=200");
 
@@ -286,9 +286,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Protected Simulation Deck",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var clientB = await AuthenticatedClientAsync();
         var response = await clientB.GetAsync($"/api/decks/{deckId}/simulation");
@@ -304,9 +304,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Finance Deck",
             Format = "Standard",
-            Decklist = "4 Plains"
+            MainDecklist = "4 Plains"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.GetAsync($"/api/decks/{deckId}/finance");
 
@@ -323,9 +323,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Snapshot Deck",
             Format = "Pioneer",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.PostAsync($"/api/decks/{deckId}/finance/snapshot", null);
 
@@ -340,9 +340,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Old Name",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.PutAsJsonAsync($"/api/decks/{deckId}", new
         {
@@ -364,9 +364,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Owner Deck",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var clientB = await AuthenticatedClientAsync();
         var response = await clientB.PutAsJsonAsync($"/api/decks/{deckId}", new { Name = "Hijacked" });
@@ -382,9 +382,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Deck To Delete",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var deleteResponse = await client.DeleteAsync($"/api/decks/{deckId}");
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -401,9 +401,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Protected Deck",
             Format = "Modern",
-            Decklist = "4 Shock"
+            MainDecklist = "4 Shock"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var clientB = await AuthenticatedClientAsync();
         var response = await clientB.DeleteAsync($"/api/decks/{deckId}");
@@ -420,9 +420,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Entry Deck",
             Format = "Modern",
-            Decklist = "20 Mountain" // não resolve — nenhuma carta chamada Mountain foi semeada
+            MainDecklist = "20 Mountain" // não resolve — nenhuma carta chamada Mountain foi semeada
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new
         {
@@ -448,9 +448,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Update Entry Deck",
             Format = "Modern",
-            Decklist = "1 Plains"
+            MainDecklist = "1 Plains"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
             new { CardName = "Update Bolt", Quantity = 2 });
@@ -471,9 +471,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Remove Entry Deck",
             Format = "Modern",
-            Decklist = "1 Plains"
+            MainDecklist = "1 Plains"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         await client.PutAsJsonAsync($"/api/decks/{deckId}/entries",
             new { CardName = "Remove Bolt", Quantity = 2 });
@@ -493,9 +493,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Unknown Card Deck",
             Format = "Modern",
-            Decklist = "1 Plains"
+            MainDecklist = "1 Plains"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var response = await client.PutAsJsonAsync($"/api/decks/{deckId}/entries", new
         {
@@ -515,9 +515,9 @@ public class DecksTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = "Owner Entry Deck",
             Format = "Modern",
-            Decklist = "1 Plains"
+            MainDecklist = "1 Plains"
         });
-        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        var deckId = (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
 
         var clientB = await AuthenticatedClientAsync();
         var response = await clientB.PutAsJsonAsync($"/api/decks/{deckId}/entries", new

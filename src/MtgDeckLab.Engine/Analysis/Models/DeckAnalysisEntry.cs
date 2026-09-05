@@ -13,8 +13,7 @@ public sealed record DeckAnalysisEntry(
     IReadOnlyList<CardType> Types,
     IReadOnlyList<CardSuperType> Supertypes,
     int Quantity,
-    bool IsCommander,
-    bool IsSideboard,
+    DeckSection Section,
     string? OracleText = null
 )
 {

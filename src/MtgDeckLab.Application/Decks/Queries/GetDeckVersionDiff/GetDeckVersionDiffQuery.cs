@@ -1,4 +1,5 @@
 using MediatR;
+using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
 
@@ -28,4 +29,4 @@ public record DeckVersionDiff(
 );
 
 public record DeckVersionCardChange(
-    Guid CardId, string CardName, int QuantityBefore, int QuantityAfter, bool IsCommander, bool IsSideboard);
+    Guid CardId, string CardName, int QuantityBefore, int QuantityAfter, DeckSection Section);

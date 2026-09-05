@@ -12,6 +12,7 @@ public record DeckDetail(
     string? Description,
     int MainDeckCount,
     int SideboardCount,
+    int MaybeboardCount,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<DeckEntryDetail> Entries
@@ -21,6 +22,9 @@ public record DeckEntryDetail(
     Guid CardId,
     string CardName,
     int Quantity,
-    bool IsCommander,
-    bool IsSideboard
+    DeckSection Section,
+    IReadOnlyList<CardType> Types,
+    decimal Cmc,
+    decimal? PriceUsd,
+    string? ManaCost
 );

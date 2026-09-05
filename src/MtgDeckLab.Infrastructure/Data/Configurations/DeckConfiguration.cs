@@ -23,8 +23,10 @@ public class DeckConfiguration : IEntityTypeConfiguration<Deck>
         builder.Ignore(d => d.MainDeck);
         builder.Ignore(d => d.Sideboard);
         builder.Ignore(d => d.CommanderSlot);
+        builder.Ignore(d => d.Maybeboard);
         builder.Ignore(d => d.TotalMainDeckCards);
         builder.Ignore(d => d.TotalSideboardCards);
+        builder.Ignore(d => d.TotalMaybeboardCards);
 
         // EF auto-detects _entries as the backing field for Entries by naming convention
         builder.HasMany(d => d.Entries)

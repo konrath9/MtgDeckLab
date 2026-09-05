@@ -1,3 +1,5 @@
+using MtgDeckLab.Domain.Enums;
+
 namespace MtgDeckLab.Domain.Entities;
 
 public sealed class DeckVersion
@@ -13,9 +15,9 @@ public sealed class DeckVersion
     public IReadOnlyList<DeckVersionEntry> Entries => _entries.AsReadOnly();
 
     public int TotalMainDeckCards =>
-        _entries.Where(e => !e.IsSideboard && !e.IsCommander).Sum(e => e.Quantity);
+        _entries.Where(e => e.Section == DeckSection.Main).Sum(e => e.Quantity);
     public int TotalSideboardCards =>
-        _entries.Where(e => e.IsSideboard).Sum(e => e.Quantity);
+        _entries.Where(e => e.Section == DeckSection.Sideboard).Sum(e => e.Quantity);
 
     private DeckVersion()
     {
@@ -27,7 +29,7 @@ public sealed class DeckVersion
         int versionNumber,
         int score,
         string grade,
-        IEnumerable<(Guid CardId, int Quantity, bool IsCommander, bool IsSideboard)> entries)
+        IEnumerable<(Guid CardId, int Quantity, DeckSection Section)> entries)
     {
         Id = Guid.NewGuid();
         DeckId = deckId;
@@ -36,7 +38,7 @@ public sealed class DeckVersion
         Grade = grade;
         CreatedAt = DateTimeOffset.UtcNow;
         _entries = entries
-            .Select(e => new DeckVersionEntry(Id, e.CardId, e.Quantity, e.IsCommander, e.IsSideboard))
+            .Select(e => new DeckVersionEntry(Id, e.CardId, e.Quantity, e.Section))
             .ToList();
     }
 }

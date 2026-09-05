@@ -19,7 +19,7 @@ public class ListDecksQueryHandler : IRequestHandler<ListDecksQuery, PagedResult
 
         var items = decks.Select(deck => new DeckSummary(
             deck.Id, deck.Name, deck.Format, deck.Description,
-            deck.TotalMainDeckCards, deck.TotalSideboardCards,
+            deck.TotalMainDeckCards, deck.TotalSideboardCards, deck.TotalMaybeboardCards,
             deck.CreatedAt, deck.UpdatedAt)).ToList();
 
         return new PagedResult<DeckSummary>(items, page, pageSize, totalCount);

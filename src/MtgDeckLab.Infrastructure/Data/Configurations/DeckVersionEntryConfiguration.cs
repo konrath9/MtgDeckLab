@@ -15,7 +15,6 @@ public class DeckVersionEntryConfiguration : IEntityTypeConfiguration<DeckVersio
         builder.Property(e => e.DeckVersionId).HasColumnName("deck_version_id");
         builder.Property(e => e.CardId).HasColumnName("card_id");
         builder.Property(e => e.Quantity).HasColumnName("quantity");
-        builder.Property(e => e.IsCommander).HasColumnName("is_commander");
-        builder.Property(e => e.IsSideboard).HasColumnName("is_sideboard");
+        builder.Property(e => e.Section).HasColumnName("section").HasConversion<int>();
     }
 }

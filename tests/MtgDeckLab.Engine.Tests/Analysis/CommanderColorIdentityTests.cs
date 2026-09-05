@@ -86,13 +86,13 @@ public class CommanderColorIdentityTests
             "Rograkh", 0,
             [Color.Red], [Color.Red],
             [CardType.Creature], [CardSuperType.Legendary],
-            1, IsCommander: true, IsSideboard: false);
+            1, DeckSection.Commander);
 
         var greenPartner = new DeckAnalysisEntry(
             "Sakashima", 2,
             [Color.Green], [Color.Green],
             [CardType.Creature], [CardSuperType.Legendary],
-            1, IsCommander: true, IsSideboard: false);
+            1, DeckSection.Commander);
 
         // Carta Blue deve ser inválida (Blue ∉ {Red, Green})
         var blueCard = AnalysisTestHelpers.MakeEntry(

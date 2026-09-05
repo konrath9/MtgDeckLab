@@ -1,6 +1,7 @@
 using MediatR;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
+using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Engine.Parsing;
 
 namespace MtgDeckLab.Application.Decks.Commands.ImportDeck;
@@ -23,21 +24,37 @@ public class ImportDeckCommandHandler : IRequestHandler<ImportDeckCommand, Impor
 
     public async Task<ImportDeckResult> Handle(ImportDeckCommand request, CancellationToken cancellationToken)
     {
-        var parseResult = _parser.Parse(request.RawDecklist);
+        var parsedEntries = new List<ParsedEntry>();
+        parsedEntries.AddRange(_parser.Parse(request.MainDecklist, DeckSection.Main).Entries);
+        if (!string.IsNullOrWhiteSpace(request.CommanderDecklist))
+            parsedEntries.AddRange(_parser.Parse(request.CommanderDecklist, DeckSection.Commander).Entries);
+        if (!string.IsNullOrWhiteSpace(request.SideboardDecklist))
+            parsedEntries.AddRange(_parser.Parse(request.SideboardDecklist, DeckSection.Sideboard).Entries);
+        if (!string.IsNullOrWhiteSpace(request.MaybeboardDecklist))
+            parsedEntries.AddRange(_parser.Parse(request.MaybeboardDecklist, DeckSection.Maybeboard).Entries);
 
-        var distinctNames = parseResult.Entries.Select(e => e.CardName).Distinct();
+        var distinctNames = parsedEntries.Select(e => e.CardName).Distinct();
         var cards = await _cardRepo.FindByNamesAsync(distinctNames, cancellationToken);
-        var cardsByName = cards.ToDictionary(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+        // Modal double-faced/split cards are stored under their full "Front // Back" name, but a
+        // decklist entry only ever gives the front face — index by both so lookup by either works.
+        var cardsByName = new Dictionary<string, Card>(StringComparer.OrdinalIgnoreCase);
+        foreach (var card in cards)
+        {
+            cardsByName[card.Name] = card;
+            var frontFace = card.Name.Split(" // ")[0];
+            if (frontFace != card.Name) cardsByName[frontFace] = card;
+        }
 
         var deck = new Deck(request.DeckName, request.Format, request.UserId, request.Description);
-        var unresolved = new List<string>();
+        var unresolved = new List<UnresolvedCardName>();
 
-        foreach (var entry in parseResult.Entries)
+        foreach (var entry in parsedEntries)
         {
             if (cardsByName.TryGetValue(entry.CardName, out var card))
-                deck.AddEntry(card.Id, entry.Quantity, entry.IsSideboard, entry.IsCommander);
+                deck.AddEntry(card.Id, entry.Quantity, entry.Section);
             else
-                unresolved.Add(entry.CardName);
+                unresolved.Add(new UnresolvedCardName(entry.CardName, entry.Section));
         }
 
         await _deckRepo.AddAsync(deck, cancellationToken);
@@ -45,7 +62,7 @@ public class ImportDeckCommandHandler : IRequestHandler<ImportDeckCommand, Impor
 
         return new ImportDeckResult(
             deck.Id,
-            parseResult.Entries.Count - unresolved.Count,
+            parsedEntries.Count - unresolved.Count,
             unresolved.AsReadOnly());
     }
 }

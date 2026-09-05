@@ -10,6 +10,19 @@ export type Format =
 
 export type Color = 'White' | 'Blue' | 'Black' | 'Red' | 'Green' | 'Colorless'
 
+export type DeckSection = 'Main' | 'Sideboard' | 'Commander' | 'Maybeboard'
+
+export type CardType =
+  | 'Creature'
+  | 'Instant'
+  | 'Sorcery'
+  | 'Artifact'
+  | 'Enchantment'
+  | 'Land'
+  | 'Planeswalker'
+  | 'Tribal'
+  | 'Battle'
+
 export interface AuthResponse {
   userId: string
   token: string
@@ -30,6 +43,7 @@ export interface DeckSummary {
   description: string | null
   mainDeckCount: number
   sideboardCount: number
+  maybeboardCount: number
   createdAt: string
   updatedAt: string
 }
@@ -38,8 +52,11 @@ export interface DeckEntryDetail {
   cardId: string
   cardName: string
   quantity: number
-  isCommander: boolean
-  isSideboard: boolean
+  section: DeckSection
+  types: CardType[]
+  cmc: number
+  priceUsd: number | null
+  manaCost: string | null
 }
 
 export interface DeckDetail {
@@ -49,15 +66,27 @@ export interface DeckDetail {
   description: string | null
   mainDeckCount: number
   sideboardCount: number
+  maybeboardCount: number
   createdAt: string
   updatedAt: string
   entries: DeckEntryDetail[]
 }
 
+export interface UnresolvedCardName {
+  cardName: string
+  section: DeckSection
+}
+
 export interface ImportDeckResponse {
   deckId: string
   resolvedCards: number
-  unresolvedCardNames: string[]
+  unresolvedCardNames: UnresolvedCardName[]
+}
+
+export interface UpsertDeckEntryResult {
+  mainDeckCount: number
+  sideboardCount: number
+  maybeboardCount: number
 }
 
 export interface ManaCurve {
@@ -71,6 +100,7 @@ export interface ColorDistribution {
   cardCount: Partial<Record<Color, number>>
   percentage: Partial<Record<Color, number>>
   isColorless: boolean
+  multicolorCount: number
 }
 
 export interface TypeDistribution {
@@ -83,6 +113,8 @@ export interface TypeDistribution {
   planeswalkers: number
   other: number
   total: number
+  // "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Colorless" | "Nonbasic" → copies
+  landBreakdown: Record<string, number>
 }
 
 export interface DeckScore {

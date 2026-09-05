@@ -1,3 +1,5 @@
+using MtgDeckLab.Domain.Enums;
+
 namespace MtgDeckLab.Domain.Entities;
 
 public sealed class DeckEntry
@@ -6,19 +8,17 @@ public sealed class DeckEntry
     public Guid DeckId { get; private init; }
     public Guid CardId { get; private init; }
     public int Quantity { get; private set; }
-    public bool IsCommander { get; private init; }
-    public bool IsSideboard { get; private init; }
+    public DeckSection Section { get; private init; }
 
     private DeckEntry() { }
 
-    internal DeckEntry(Guid deckId, Guid cardId, int quantity, bool isCommander, bool isSideboard)
+    internal DeckEntry(Guid deckId, Guid cardId, int quantity, DeckSection section)
     {
         Id = Guid.NewGuid();
         DeckId = deckId;
         CardId = cardId;
         Quantity = quantity;
-        IsCommander = isCommander;
-        IsSideboard = isSideboard;
+        Section = section;
     }
 
     internal void AddQuantity(int amount) => Quantity += amount;

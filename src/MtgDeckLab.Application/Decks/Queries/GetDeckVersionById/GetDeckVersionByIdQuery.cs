@@ -1,4 +1,5 @@
 using MediatR;
+using MtgDeckLab.Domain.Enums;
 
 namespace MtgDeckLab.Application.Decks.Queries.GetDeckVersionById;
 
@@ -15,4 +16,4 @@ public record DeckVersionDetail(
     IReadOnlyList<DeckVersionEntryDetail> Entries
 );
 
-public record DeckVersionEntryDetail(Guid CardId, string CardName, int Quantity, bool IsCommander, bool IsSideboard);
+public record DeckVersionEntryDetail(Guid CardId, string CardName, int Quantity, DeckSection Section);

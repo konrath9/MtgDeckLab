@@ -1,10 +1,11 @@
+using MtgDeckLab.Domain.Enums;
+
 namespace MtgDeckLab.Engine.Parsing;
 
 public sealed record ParsedEntry(
     int Quantity,
     string CardName,
-    bool IsCommander,
-    bool IsSideboard,
+    DeckSection Section,
     string? SetCode,
     int? CollectorNumber
 );

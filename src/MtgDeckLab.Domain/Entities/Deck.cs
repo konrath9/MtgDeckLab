@@ -15,12 +15,14 @@ public sealed class Deck
     public DateTimeOffset CreatedAt { get; private init; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    public IEnumerable<DeckEntry> MainDeck => _entries.Where(e => !e.IsSideboard && !e.IsCommander);
-    public IEnumerable<DeckEntry> Sideboard => _entries.Where(e => e.IsSideboard);
-    public IEnumerable<DeckEntry> CommanderSlot => _entries.Where(e => e.IsCommander);
+    public IEnumerable<DeckEntry> MainDeck => _entries.Where(e => e.Section == DeckSection.Main);
+    public IEnumerable<DeckEntry> Sideboard => _entries.Where(e => e.Section == DeckSection.Sideboard);
+    public IEnumerable<DeckEntry> CommanderSlot => _entries.Where(e => e.Section == DeckSection.Commander);
+    public IEnumerable<DeckEntry> Maybeboard => _entries.Where(e => e.Section == DeckSection.Maybeboard);
 
     public int TotalMainDeckCards => MainDeck.Sum(e => e.Quantity);
     public int TotalSideboardCards => Sideboard.Sum(e => e.Quantity);
+    public int TotalMaybeboardCards => Maybeboard.Sum(e => e.Quantity);
 
     private Deck()
     {
@@ -51,31 +53,25 @@ public sealed class Deck
         Touch();
     }
 
-    public void AddEntry(Guid cardId, int quantity, bool isSideboard = false, bool isCommander = false)
+    public void AddEntry(Guid cardId, int quantity, DeckSection section = DeckSection.Main)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
 
-        var existing = _entries.FirstOrDefault(e =>
-            e.CardId == cardId &&
-            e.IsSideboard == isSideboard &&
-            e.IsCommander == isCommander);
+        var existing = _entries.FirstOrDefault(e => e.CardId == cardId && e.Section == section);
 
         if (existing is not null)
             existing.AddQuantity(quantity);
         else
-            _entries.Add(new DeckEntry(Id, cardId, quantity, isCommander, isSideboard));
+            _entries.Add(new DeckEntry(Id, cardId, quantity, section));
 
         Touch();
     }
 
-    public void SetEntryQuantity(Guid cardId, int quantity, bool isSideboard = false, bool isCommander = false)
+    public void SetEntryQuantity(Guid cardId, int quantity, DeckSection section = DeckSection.Main)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(quantity);
 
-        var entry = _entries.FirstOrDefault(e =>
-            e.CardId == cardId &&
-            e.IsSideboard == isSideboard &&
-            e.IsCommander == isCommander);
+        var entry = _entries.FirstOrDefault(e => e.CardId == cardId && e.Section == section);
 
         if (quantity == 0)
         {
@@ -87,18 +83,15 @@ public sealed class Deck
         }
         else
         {
-            _entries.Add(new DeckEntry(Id, cardId, quantity, isCommander, isSideboard));
+            _entries.Add(new DeckEntry(Id, cardId, quantity, section));
         }
 
         Touch();
     }
 
-    public void RemoveEntry(Guid cardId, bool isSideboard = false, bool isCommander = false)
+    public void RemoveEntry(Guid cardId, DeckSection section = DeckSection.Main)
     {
-        var entry = _entries.FirstOrDefault(e =>
-            e.CardId == cardId &&
-            e.IsSideboard == isSideboard &&
-            e.IsCommander == isCommander);
+        var entry = _entries.FirstOrDefault(e => e.CardId == cardId && e.Section == section);
 
         if (entry is not null)
         {
@@ -109,7 +102,7 @@ public sealed class Deck
 
     public void ClearSideboard()
     {
-        _entries.RemoveAll(e => e.IsSideboard);
+        _entries.RemoveAll(e => e.Section == DeckSection.Sideboard);
         Touch();
     }
 

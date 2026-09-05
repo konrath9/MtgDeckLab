@@ -1,6 +1,7 @@
 using MediatR;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
+using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Engine.Analysis;
 
 namespace MtgDeckLab.Application.Decks.Commands.TakeDeckVersion;
@@ -32,7 +33,10 @@ public class TakeDeckVersionCommandHandler : IRequestHandler<TakeDeckVersionComm
         var analysis = _analyzer.Analyze(DeckAnalysisMapper.BuildForAnalysis(deck, cards));
 
         var versionNumber = await _versionRepo.GetNextVersionNumberAsync(request.DeckId, cancellationToken);
-        var entrySnapshots = deck.Entries.Select(e => (e.CardId, e.Quantity, e.IsCommander, e.IsSideboard));
+        // A version is a snapshot of the deck itself — maybeboard cards were never part of it.
+        var entrySnapshots = deck.Entries
+            .Where(e => e.Section != DeckSection.Maybeboard)
+            .Select(e => (e.CardId, e.Quantity, e.Section));
 
         var version = new DeckVersion(
             request.DeckId, versionNumber, analysis.Score.Score, analysis.Score.Grade, entrySnapshots);

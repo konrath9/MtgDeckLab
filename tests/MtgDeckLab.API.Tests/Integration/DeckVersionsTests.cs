@@ -70,9 +70,9 @@ public class DeckVersionsTests : IClassFixture<ApiWebApplicationFactory>
         {
             Name = name,
             Format = "Modern",
-            Decklist = decklist
+            MainDecklist = decklist
         });
-        return (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>())!.DeckId;
+        return (await importResp.Content.ReadFromJsonAsync<ImportDeckResponse>(JsonOptions))!.DeckId;
     }
 
     [Fact]

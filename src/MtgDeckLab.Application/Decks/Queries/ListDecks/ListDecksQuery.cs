@@ -13,6 +13,7 @@ public record DeckSummary(
     string? Description,
     int MainDeckCount,
     int SideboardCount,
+    int MaybeboardCount,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt
 );

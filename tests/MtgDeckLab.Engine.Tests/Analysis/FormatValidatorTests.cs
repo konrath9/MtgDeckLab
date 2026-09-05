@@ -79,7 +79,7 @@ public class FormatValidatorTests
             "Grizzly Bears", 2,
             [Color.Green], [Color.Green],
             [CardType.Creature], [],
-            1, IsCommander: true, IsSideboard: false);
+            1, DeckSection.Commander);
 
         var mainDeck = Enumerable.Range(1, 61)
             .Select(i => AnalysisTestHelpers.Creature($"Creature {i}"))

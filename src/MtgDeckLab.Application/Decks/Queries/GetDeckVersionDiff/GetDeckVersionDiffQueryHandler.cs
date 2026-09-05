@@ -1,6 +1,7 @@
 using MediatR;
 using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Domain.Entities;
+using MtgDeckLab.Domain.Enums;
 using MtgDeckLab.Engine.Analysis;
 
 namespace MtgDeckLab.Application.Decks.Queries.GetDeckVersionDiff;
@@ -60,13 +61,13 @@ public class GetDeckVersionDiffQueryHandler : IRequestHandler<GetDeckVersionDiff
             added, removed, changed);
     }
 
-    private static IEnumerable<(Guid CardId, int Quantity, bool IsCommander, bool IsSideboard)> ToEntryTuples(
+    private static IEnumerable<(Guid CardId, int Quantity, DeckSection Section)> ToEntryTuples(
         DeckVersion version) =>
-        version.Entries.Select(e => (e.CardId, e.Quantity, e.IsCommander, e.IsSideboard));
+        version.Entries.Select(e => (e.CardId, e.Quantity, e.Section));
 
     private static decimal MainDeckCostUsd(DeckVersion version, IReadOnlyDictionary<Guid, Card> cardById) =>
         version.Entries
-            .Where(e => !e.IsSideboard && !e.IsCommander)
+            .Where(e => e.Section == DeckSection.Main)
             .Sum(e => cardById.TryGetValue(e.CardId, out var card) ? (card.PriceUsd ?? 0m) * e.Quantity : 0m);
 
     private static (
@@ -75,8 +76,8 @@ public class GetDeckVersionDiffQueryHandler : IRequestHandler<GetDeckVersionDiff
         IReadOnlyList<DeckVersionCardChange> Changed) DiffEntries(
         DeckVersion from, DeckVersion to, IReadOnlyDictionary<Guid, Card> cardById)
     {
-        var fromByKey = from.Entries.ToDictionary(e => (e.CardId, e.IsSideboard, e.IsCommander));
-        var toByKey = to.Entries.ToDictionary(e => (e.CardId, e.IsSideboard, e.IsCommander));
+        var fromByKey = from.Entries.ToDictionary(e => (e.CardId, e.Section));
+        var toByKey = to.Entries.ToDictionary(e => (e.CardId, e.Section));
 
         var added = new List<DeckVersionCardChange>();
         var removed = new List<DeckVersionCardChange>();
@@ -90,10 +91,10 @@ public class GetDeckVersionDiffQueryHandler : IRequestHandler<GetDeckVersionDiff
             var quantityAfter = toEntry?.Quantity ?? 0;
             if (quantityBefore == quantityAfter) continue;
 
-            var (cardId, isSideboard, isCommander) = key;
+            var (cardId, section) = key;
             var cardName = cardById.TryGetValue(cardId, out var card) ? card.Name : "Unknown card";
             var change = new DeckVersionCardChange(
-                cardId, cardName, quantityBefore, quantityAfter, isCommander, isSideboard);
+                cardId, cardName, quantityBefore, quantityAfter, section);
 
             if (quantityBefore == 0) added.Add(change);
             else if (quantityAfter == 0) removed.Add(change);

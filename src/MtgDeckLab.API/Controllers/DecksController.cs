@@ -102,7 +102,7 @@ public class DecksController : ControllerBase
         try
         {
             var result = await _sender.Send(new UpsertDeckEntryCommand(
-                id, CurrentUserId, request.CardName, request.Quantity, request.IsSideboard, request.IsCommander), ct);
+                id, CurrentUserId, request.CardName, request.Quantity, request.Section), ct);
             return Ok(result);
         }
         catch (KeyNotFoundException)
@@ -124,7 +124,9 @@ public class DecksController : ControllerBase
     public async Task<IActionResult> Import([FromBody] ImportDeckRequest request, CancellationToken ct)
     {
         var command = new ImportDeckCommand(
-            request.Name, request.Format, request.Decklist, CurrentUserId, request.Description);
+            request.Name, request.Format, request.MainDecklist, CurrentUserId,
+            request.CommanderDecklist, request.SideboardDecklist, request.MaybeboardDecklist,
+            request.Description);
 
         var result = await _sender.Send(command, ct);
 
@@ -255,14 +257,17 @@ public class DecksController : ControllerBase
 public record ImportDeckRequest(
     string Name,
     Format Format,
-    string Decklist,
+    string MainDecklist,
+    string? CommanderDecklist = null,
+    string? SideboardDecklist = null,
+    string? MaybeboardDecklist = null,
     string? Description = null
 );
 
 public record ImportDeckResponse(
     Guid DeckId,
     int ResolvedCards,
-    IReadOnlyList<string> UnresolvedCardNames
+    IReadOnlyList<UnresolvedCardName> UnresolvedCardNames
 );
 
 public record UpdateDeckRequest(string Name, string? Description = null);
@@ -270,6 +275,5 @@ public record UpdateDeckRequest(string Name, string? Description = null);
 public record UpsertDeckEntryRequest(
     string CardName,
     int Quantity,
-    bool IsSideboard = false,
-    bool IsCommander = false
+    DeckSection Section = DeckSection.Main
 );

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MtgDeckLab.Infrastructure.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MtgDeckLab.Infrastructure.Migrations
 {
     [DbContext(typeof(MtgDeckLabDbContext))]
-    partial class MtgDeckLabDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260905012012_ReplaceCommanderSideboardFlagsWithSection")]
+    partial class ReplaceCommanderSideboardFlagsWithSection
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

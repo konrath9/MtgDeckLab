@@ -33,7 +33,7 @@ public class GetDeckVersionByIdQueryHandler : IRequestHandler<GetDeckVersionById
             .Select(e => new DeckVersionEntryDetail(
                 e.CardId,
                 cardById.TryGetValue(e.CardId, out var card) ? card.Name : "Unknown card",
-                e.Quantity, e.IsCommander, e.IsSideboard))
+                e.Quantity, e.Section))
             .ToList();
 
         return new DeckVersionDetail(

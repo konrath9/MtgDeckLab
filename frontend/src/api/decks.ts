@@ -2,10 +2,12 @@ import { apiClient } from './client'
 import type {
   DeckAnalysisResult,
   DeckDetail,
+  DeckSection,
   DeckSummary,
   Format,
   ImportDeckResponse,
   PagedResult,
+  UpsertDeckEntryResult,
 } from './types'
 
 export async function listDecks(page = 1, pageSize = 20): Promise<PagedResult<DeckSummary>> {
@@ -23,14 +25,36 @@ export async function getDeck(id: string): Promise<DeckDetail> {
 export async function importDeck(
   name: string,
   format: Format,
-  decklist: string,
-  description?: string,
+  mainDecklist: string,
+  options?: {
+    commanderDecklist?: string
+    sideboardDecklist?: string
+    maybeboardDecklist?: string
+    description?: string
+  },
 ): Promise<ImportDeckResponse> {
   const { data } = await apiClient.post<ImportDeckResponse>('/decks/import', {
     name,
     format,
-    decklist,
-    description,
+    mainDecklist,
+    commanderDecklist: options?.commanderDecklist,
+    sideboardDecklist: options?.sideboardDecklist,
+    maybeboardDecklist: options?.maybeboardDecklist,
+    description: options?.description,
+  })
+  return data
+}
+
+export async function upsertDeckEntry(
+  deckId: string,
+  cardName: string,
+  quantity: number,
+  section: DeckSection = 'Main',
+): Promise<UpsertDeckEntryResult> {
+  const { data } = await apiClient.put<UpsertDeckEntryResult>(`/decks/${deckId}/entries`, {
+    cardName,
+    quantity,
+    section,
   })
   return data
 }

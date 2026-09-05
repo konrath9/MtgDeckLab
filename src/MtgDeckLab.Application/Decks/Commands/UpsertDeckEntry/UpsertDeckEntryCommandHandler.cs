@@ -25,9 +25,10 @@ public class UpsertDeckEntryCommandHandler : IRequestHandler<UpsertDeckEntryComm
         if (card is null)
             throw new InvalidOperationException($"Card '{request.CardName}' not found.");
 
-        deck.SetEntryQuantity(card.Id, request.Quantity, request.IsSideboard, request.IsCommander);
+        deck.SetEntryQuantity(card.Id, request.Quantity, request.Section);
         await _deckRepo.SaveChangesAsync(cancellationToken);
 
-        return new UpsertDeckEntryResult(deck.TotalMainDeckCards, deck.TotalSideboardCards);
+        return new UpsertDeckEntryResult(
+            deck.TotalMainDeckCards, deck.TotalSideboardCards, deck.TotalMaybeboardCards);
     }
 }
