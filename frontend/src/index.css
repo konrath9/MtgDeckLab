@@ -1,25 +1,146 @@
 @import "tailwindcss";
 
+/* Variante dark por atributo: o ThemeProvider/script inline sempre marcam data-theme no <html>,
+   então `dark:` aplica estilos exclusivos do tema escuro sem tocar no claro. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Design tokens — dois temas por variáveis CSS.
+ *
+ * O @theme registra a paleta ESCURA como padrão (a essência atual do produto). O tema claro é um
+ * override em [data-theme='light'], que o ThemeProvider liga no <html> a partir do localStorage.
+ * As utilities do Tailwind (bg-bg, text-fg, border-border, ...) lêem essas variáveis, então tudo
+ * que usa os tokens semânticos troca de tema automaticamente.
+ */
 @theme {
-  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: #0e0e10;
-  --color-surface: #161618;
-  --color-surface-hover: #1c1c1f;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  /* Tema escuro (padrão) — fundo azul-marinho profundo com superfícies levemente mais claras
+     para ganhar profundidade e contraste (o gradiente do <body> faz o resto). */
+  --color-bg: #0a0e16;
+  --color-surface: #141a29;
+  --color-surface-hover: #1c2436;
+  --color-border: rgba(151, 170, 226, 0.16);
+  --color-border-strong: rgba(165, 182, 238, 0.3);
 
-  --color-fg: #f5f5f5;
-  --color-muted: #92929a;
+  --color-fg: #eef1f7;
+  --color-muted: #9aa3b5;
 
-  --color-accent: #5e6ad2;
-  --color-accent-strong: #7583e8;
+  --color-accent: #6673f0;
+  --color-accent-strong: #8a96ff;
+  /* Neon suave (azul-pervêncio claro) para ícones e títulos de seção no escuro. */
+  --color-accent-soft: #aab7ff;
+  /* Hairline do cabeçalho: branca e sutil no escuro para separar do conteúdo. */
+  --color-header-line: rgba(255, 255, 255, 0.12);
 
-  --color-danger: #e5484d;
-  --color-warning: #e8a33d;
-  --color-success: #46a758;
+  --color-danger: #ef5560;
+  --color-warning: #eaa63e;
+  --color-success: #48c273;
 }
 
-body {
-  @apply bg-bg font-sans text-fg antialiased;
+:root {
+  color-scheme: dark;
 }
+
+/* Tema claro — limpo e profissional: fundo frio, superfícies brancas e o mesmo accent índigo,
+   com os tons de semântica (danger/warning/success) escurecidos para manter contraste sobre branco. */
+[data-theme="light"] {
+  --color-bg: #f5f6f9;
+  --color-surface: #ffffff;
+  --color-surface-hover: #ecedf1;
+  --color-border: rgba(17, 20, 30, 0.1);
+  --color-border-strong: rgba(17, 20, 30, 0.18);
+
+  --color-fg: #17191f;
+  --color-muted: #5d626d;
+
+  --color-accent: #4b56c8;
+  --color-accent-strong: #3943ad;
+  /* No claro o accent-soft não é usado pelas classes dark:; fica igual ao accent para consistência. */
+  --color-accent-soft: #4b56c8;
+  /* Mantém o light exatamente como está hoje (mesma borda do header atual). */
+  --color-header-line: rgba(17, 20, 30, 0.1);
+
+  --color-danger: #c93643;
+  --color-warning: #93630f;
+  --color-success: #217a3c;
+
+  color-scheme: light;
+}
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-fg antialiased;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  /* Profundidade do tema escuro: em vez de um fundo chapado, dois halos radiais muito sutis de
+     azul/roxo (um no topo-esquerda, outro na direita) sobre o azul-marinho base. O tema claro
+     continua com fundo plano (override logo abaixo). */
+  body {
+    background-image:
+      radial-gradient(1000px 640px at 18% -12%, rgba(84, 118, 255, 0.13), transparent 62%),
+      radial-gradient(1100px 720px at 106% -8%, rgba(148, 92, 255, 0.11), transparent 58%),
+      radial-gradient(1400px 900px at 50% 118%, rgba(90, 122, 255, 0.05), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Fonte display para títulos principais; o peso/letter-spacing que cada título usa
+     continuam vindo das utilities (font-medium/font-semibold/tracking-tight, etc). */
+  h1,
+  h2 {
+    font-family: var(--font-display);
+  }
+}
+
+[data-theme="light"] body {
+  background-image: none;
+  background-attachment: scroll;
+}
+
+/* Acessibilidade: respeita quem prefere menos movimento — desliga as animações de
+   hover/tema (as de entrada/saída de conteúdo, tipo o reveal das linhas do deck, seguem). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Logo — brilho neon azul/roxo no tema escuro: glow duplo que acompanha o desenho do cristal
+   (duas camadas de drop-shadow para dar aura sem manchar a superfície ao redor). No tema claro o
+   glow amortece para não brigar com o fundo branco. */
+.brand-mark {
+  filter: drop-shadow(0 0 5px rgba(150, 100, 255, 0.65)) drop-shadow(0 0 16px rgba(96, 134, 255, 0.4));
+}
+
+[data-theme="light"] .brand-mark {
+  filter: drop-shadow(0 0 5px rgba(122, 92, 255, 0.28));
+}
+
+/* Contêineres dos gráficos no tema escuro: "cards" levemente mais claros que o fundo, com hairline
+   sutil e sombra macia para dar profundidade — sem glow nem glassmorphism. No tema claro a classe
+   é neutra (reset abaixo), então o layout do Light não muda. */
+.chart-panel {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.035);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 16px 28px -20px rgba(0, 0, 0, 0.65);
+  padding: 1rem 1rem 0.875rem;
+}
+
+[data-theme="light"] .chart-panel {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+

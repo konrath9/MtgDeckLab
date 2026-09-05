@@ -64,7 +64,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="w-full rounded-md bg-accent px-4 py-2 font-medium text-white shadow-sm transition duration-150 hover:-translate-y-px hover:bg-accent-strong hover:shadow-md disabled:opacity-50 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </button>

@@ -1,25 +1,12 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useTranslation } from 'react-i18next'
 import type { TypeDistribution } from '../api/types'
-import { CHART, ChartTooltip, MANA_COLORS, axisTick } from './chartTheme'
-
-const TYPE_COLOR = '#3f6fd1'
+import { ChartTooltip, useChartTheme } from './chartTheme'
 
 // The Lands row is split by basic-land color (plus nonbasic), so a mana base reads at a glance
 // instead of collapsing into one number. Order matters: it's the stacking order, left to right.
 // Estas chaves são as da API (landBreakdown) — o rótulo traduzido entra só na exibição.
 const LAND_BUCKETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Colorless', 'Nonbasic'] as const
-const LAND_BUCKET_COLORS: Record<string, string> = {
-  Plains: MANA_COLORS.White,
-  Island: MANA_COLORS.Blue,
-  Swamp: MANA_COLORS.Black,
-  Mountain: MANA_COLORS.Red,
-  Forest: MANA_COLORS.Green,
-  Colorless: MANA_COLORS.Colorless,
-  // Light neutral: nonbasics have no color of their own, and it must not read as "black"
-  // (which would collide with Swamp) — lightness is what separates it from Colorless.
-  Nonbasic: '#b4b4bd',
-}
 
 type Row = {
   type: string
@@ -31,6 +18,19 @@ type Row = {
 
 export function TypeDistributionChart({ typeDistribution }: { typeDistribution: TypeDistribution }) {
   const { t } = useTranslation()
+  const { bar, mana, nonbasic, grid, axis, cursor, axisTick, tick } = useChartTheme()
+
+  // As cores dos terrenos seguem as identidades de cor; Nonbasic é neutro claro de propósito (não
+  // pode colidir com Swamp nem com Colorless).
+  const landBucketColors: Record<string, string> = {
+    Plains: mana.White,
+    Island: mana.Blue,
+    Swamp: mana.Black,
+    Mountain: mana.Red,
+    Forest: mana.Green,
+    Colorless: mana.Colorless,
+    Nonbasic: nonbasic,
+  }
 
   const landBreakdown = typeDistribution.landBreakdown ?? {}
   const activeLandBuckets = LAND_BUCKETS.filter((b) => (landBreakdown[b] ?? 0) > 0)
@@ -71,28 +71,28 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
         <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 28, left: 4, bottom: 0 }}>
           <defs>
             <linearGradient id="typeDistBar" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={TYPE_COLOR} stopOpacity={0.55} />
-              <stop offset="100%" stopColor={TYPE_COLOR} stopOpacity={1} />
+              <stop offset="0%" stopColor={bar} stopOpacity={0.55} />
+              <stop offset="100%" stopColor={bar} stopOpacity={1} />
             </linearGradient>
             {activeLandBuckets.map((bucket) => (
               <linearGradient key={bucket} id={`typeDist-${bucket}`} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor={LAND_BUCKET_COLORS[bucket]} stopOpacity={0.55} />
-                <stop offset="100%" stopColor={LAND_BUCKET_COLORS[bucket]} stopOpacity={1} />
+                <stop offset="0%" stopColor={landBucketColors[bucket]} stopOpacity={0.55} />
+                <stop offset="100%" stopColor={landBucketColors[bucket]} stopOpacity={1} />
               </linearGradient>
             ))}
           </defs>
-          <CartesianGrid strokeDasharray="2 4" stroke={CHART.grid} horizontal={false} />
-          <XAxis type="number" allowDecimals={false} stroke={CHART.axis} tickLine={false} tick={axisTick} />
+          <CartesianGrid strokeDasharray="2 4" stroke={grid} horizontal={false} />
+          <XAxis type="number" allowDecimals={false} stroke={axis} tickLine={false} tick={axisTick} />
           <YAxis
             type="category"
             dataKey="type"
             width={92}
-            stroke={CHART.axis}
+            stroke={axis}
             tickLine={false}
             axisLine={false}
             tick={axisTick}
           />
-          <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<ChartTooltip />} />
+          <Tooltip cursor={{ fill: cursor }} content={<ChartTooltip />} />
 
           <Bar
             dataKey="count"
@@ -102,7 +102,7 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
             radius={[0, 5, 5, 0]}
             maxBarSize={20}
           >
-            <LabelList dataKey="count" position="right" fill={CHART.tick} fontSize={10} />
+            <LabelList dataKey="count" position="right" fill={tick} fontSize={10} />
           </Bar>
 
           {activeLandBuckets.map((bucket) => (
@@ -116,7 +116,7 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
               radius={bucket === lastBucket ? [0, 5, 5, 0] : undefined}
             >
               {bucket === lastBucket && (
-                <LabelList dataKey="total" position="right" fill={CHART.tick} fontSize={10} />
+                <LabelList dataKey="total" position="right" fill={tick} fontSize={10} />
               )}
             </Bar>
           ))}

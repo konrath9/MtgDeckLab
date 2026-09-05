@@ -17,7 +17,9 @@
     "myDecks": "Meus Decks",
     "importDeck": "Importar Deck",
     "logOut": "Sair",
-    "language": "Idioma"
+    "language": "Idioma",
+    "themeLight": "Mudar para o tema claro",
+    "themeDark": "Mudar para o tema escuro"
   },
   "sections": {
     "Main": "Deck Principal",

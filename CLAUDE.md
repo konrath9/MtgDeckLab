@@ -447,3 +447,20 @@ When a visual decision is ambiguous, prefer the simpler solution that makes the 
 The goal is not to make the UI look impressive.
 
 The goal is to make the product feel effortless.
+
+## Scryfall as the Single Source of Truth for MTG Data & Assets
+
+The Scryfall API is the **absolute and only** source for any Magic: The Gathering data, asset, or visual element in this project. Do not hardcode game data, emulate card features, or use third-party libraries to substitute Scryfall's official resources.
+
+**Scope of usage (endpoints and features):**
+- **Card Data:** Use `/cards/named`, `/cards/search`, and bulk data endpoints for all card attributes (names, oracle text, types, subtypes, power, toughness, rarities, sets, legalities).
+- **Images:** Use `image_uris` or `card_faces` (for double-sided cards) for all card art, tooltips, and hover previews.
+- **Icons & Symbols:** Use the official Scryfall SVGs (`https://svgs.scryfall.io/card-symbols/...`) for **ALL** mana symbols, tap symbols, hybrid mana, and any other game-related icon. Never use FontAwesome, emojis, or custom CSS shapes for these.
+- **Localization:** Use Scryfall's multilingual bulk data and API endpoints for card names in different languages (e.g., `pt`).
+- **Formats & Rulings:** Use Scryfall for any format legality, rulings, or watermark data if needed.
+
+**Implementation Rules:**
+- Always inspect the Scryfall API documentation first to see if a requested feature or asset is already natively supported before creating a workaround or hardcoding it.
+- **Caching:** When fetching any data or asset from Scryfall, always implement a backend/database cache (or local frontend cache) to avoid redundant API calls. Scryfall should only be queried when the data does not exist in our cache.
+
+**Visual rule for tooltips:** Any card hover preview or tooltip must follow the "Visual direction" rules above. Keep it minimal (subtle fade-in, soft shadow, clean border). **Do not use glowing borders, glassmorphism, or heavy drop shadows on tooltips.**

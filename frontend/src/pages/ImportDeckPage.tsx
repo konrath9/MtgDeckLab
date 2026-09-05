@@ -198,7 +198,7 @@ export function ImportDeckPage() {
               <button
                 type="button"
                 onClick={() => navigate(`/decks/${pendingDeckId}`)}
-                className="rounded-md border border-border px-3 py-1.5 text-sm text-fg transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                className="rounded-md border border-border px-3 py-1.5 text-sm text-fg transition duration-150 hover:-translate-y-px hover:border-border-strong hover:bg-surface-hover hover:shadow-sm active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               >
                 {t('import.continueToDeck')}
               </button>
@@ -208,8 +208,9 @@ export function ImportDeckPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 font-medium text-white shadow-sm transition duration-150 hover:-translate-y-px hover:bg-accent-strong hover:shadow-md disabled:opacity-50 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
+          <i className="fa-solid fa-file-import text-sm" aria-hidden="true" />
           {isSubmitting ? t('import.submitting') : t('import.submit')}
         </button>
       </form>

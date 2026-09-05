@@ -7,10 +7,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
     <title>MTG Deck Lab</title>
+    <script>
+      // Aplica o tema salvo antes do primeiro paint (evita "flash" do tema errado ao recarregar).
+      // Sem preferência salva, o padrão é o tema escuro — que já é a essência atual do produto.
+      // O atributo é SEMPRE definido (dark ou light) para as variantes dark:/light: do Tailwind.
+      ;(function () {
+        try {
+          var theme = localStorage.getItem('mtgdecklab.theme')
+          if (theme !== 'light' && theme !== 'dark') theme = 'dark'
+          document.documentElement.dataset.theme = theme
+        } catch (e) {
+          /* localStorage indisponível (modo privado) — segue o tema padrão. */
+          document.documentElement.dataset.theme = 'dark'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

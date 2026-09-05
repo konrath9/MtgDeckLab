@@ -17,7 +17,9 @@
     "myDecks": "My Decks",
     "importDeck": "Import Deck",
     "logOut": "Log out",
-    "language": "Language"
+    "language": "Language",
+    "themeLight": "Switch to light theme",
+    "themeDark": "Switch to dark theme"
   },
   "sections": {
     "Main": "Main Deck",

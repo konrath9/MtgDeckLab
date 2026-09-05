@@ -1,7 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Trans, useTranslation } from 'react-i18next'
 import type { Color, ColorDistribution } from '../api/types'
-import { CHART, ChartTooltip, MANA_COLORS, RAINBOW_STOPS, axisTick } from './chartTheme'
+import { ChartTooltip, useChartTheme } from './chartTheme'
 
 const COLOR_ORDER: Color[] = ['White', 'Blue', 'Black', 'Red', 'Green', 'Colorless']
 const MULTICOLOR_GRADIENT_ID = 'colorDist-multicolor'
@@ -12,12 +12,13 @@ type Row = { key: string; label: string; count: number; fill: string; gradientId
 
 export function ColorDistributionChart({ colorDistribution }: { colorDistribution: ColorDistribution }) {
   const { t } = useTranslation()
+  const { mana, grid, axis, cursor, axisTick, tick, rainbowStops } = useChartTheme()
 
   const colorRows: Row[] = COLOR_ORDER.map((color) => ({
     key: color,
     label: t(`colors.${color}`),
     count: colorDistribution.cardCount[color] ?? 0,
-    fill: MANA_COLORS[color],
+    fill: mana[color],
     gradientId: `colorDist-${color}`,
   })).filter((r) => r.count > 0)
 
@@ -30,7 +31,7 @@ export function ColorDistributionChart({ colorDistribution }: { colorDistributio
             label: t('colors.Multicolor'),
             count: colorDistribution.multicolorCount,
             // Not one of the five colors — the bar itself spans all of them instead.
-            fill: MANA_COLORS.Colorless,
+            fill: mana.Colorless,
             gradientId: MULTICOLOR_GRADIENT_ID,
             isMulticolor: true,
           },
@@ -56,30 +57,30 @@ export function ColorDistributionChart({ colorDistribution }: { colorDistributio
               ))}
             {/* Multicolor spans WUBRG, keeping the same base-to-tip fade as every other bar. */}
             <linearGradient id={MULTICOLOR_GRADIENT_ID} x1="0" y1="0" x2="1" y2="0">
-              {RAINBOW_STOPS.map((color, i) => (
+              {rainbowStops.map((color, i) => (
                 <stop
                   key={color}
-                  offset={`${(i / (RAINBOW_STOPS.length - 1)) * 100}%`}
+                  offset={`${(i / (rainbowStops.length - 1)) * 100}%`}
                   stopColor={color}
-                  stopOpacity={0.7 + (i / (RAINBOW_STOPS.length - 1)) * 0.3}
+                  stopOpacity={0.7 + (i / (rainbowStops.length - 1)) * 0.3}
                 />
               ))}
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="2 4" stroke={CHART.grid} horizontal={false} />
-          <XAxis type="number" allowDecimals={false} stroke={CHART.axis} tickLine={false} tick={axisTick} />
+          <CartesianGrid strokeDasharray="2 4" stroke={grid} horizontal={false} />
+          <XAxis type="number" allowDecimals={false} stroke={axis} tickLine={false} tick={axisTick} />
           <YAxis
             type="category"
             dataKey="label"
             width={78}
-            stroke={CHART.axis}
+            stroke={axis}
             tickLine={false}
             axisLine={false}
             tick={axisTick}
           />
-          <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<ChartTooltip />} />
+          <Tooltip cursor={{ fill: cursor }} content={<ChartTooltip />} />
           <Bar dataKey="count" name={t('analysis.charts.cards')} radius={[0, 5, 5, 0]} maxBarSize={20}>
-            <LabelList dataKey="count" position="right" fill={CHART.tick} fontSize={10} />
+            <LabelList dataKey="count" position="right" fill={tick} fontSize={10} />
             {rows.map((row) => (
               <Cell key={row.key} fill={`url(#${row.gradientId})`} />
             ))}

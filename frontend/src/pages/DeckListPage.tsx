@@ -36,8 +36,9 @@ export function DeckListPage() {
         {decks !== null && decks.length > 0 && (
           <Link
             to="/decks/import"
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition duration-150 hover:-translate-y-px hover:bg-accent-strong hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
+            <i className="fa-solid fa-file-import text-xs" aria-hidden="true" />
             {t('deckList.importCta')}
           </Link>
         )}
@@ -55,8 +56,9 @@ export function DeckListPage() {
           <p className="max-w-sm text-sm text-muted">{t('deckList.empty.description')}</p>
           <Link
             to="/decks/import"
-            className="mt-2 rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+            className="mt-2 inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-sm transition duration-150 hover:-translate-y-px hover:bg-accent-strong hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
+            <i className="fa-solid fa-file-import text-sm" aria-hidden="true" />
             {t('deckList.empty.cta')}
           </Link>
         </div>
@@ -68,7 +70,7 @@ export function DeckListPage() {
             <Link
               key={deck.id}
               to={`/decks/${deck.id}`}
-              className="rounded-md border border-border bg-surface p-4 transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="group rounded-md border border-border bg-surface p-4 transition duration-200 hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-hover hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-medium text-fg">{deck.name}</h2>

@@ -17,9 +17,9 @@ import { ValidationList } from '../components/ValidationList'
 const INPUT_CLASS =
   'w-full rounded-md border border-border bg-surface px-3 py-1.5 text-fg transition-colors focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
 const GHOST_BUTTON_CLASS =
-  'rounded-md border border-border px-3 py-1.5 text-sm text-fg transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg'
+  'inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-fg transition duration-150 hover:-translate-y-px hover:border-border-strong hover:bg-surface-hover hover:shadow-sm active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg'
 const PRIMARY_BUTTON_CLASS =
-  'rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg'
+  'inline-flex items-center justify-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white shadow-sm transition duration-150 hover:-translate-y-px hover:bg-accent-strong hover:shadow-md disabled:opacity-50 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg'
 
 // Consistent vertical rhythm: SECTION_GAP separates major narrative sections (identity, score,
 // strengths/weaknesses, the entries+analysis area); everything inside a section uses smaller,
@@ -324,12 +324,14 @@ export function DeckDetailPage() {
         {!isEditing && (
           <div className="flex gap-2">
             <button onClick={() => setIsEditing(true)} className={GHOST_BUTTON_CLASS}>
+              <i className="fa-solid fa-pen text-xs" aria-hidden="true" />
               {t('common.edit')}
             </button>
             <button
               onClick={handleDelete}
-              className="rounded-md border border-border px-3 py-1.5 text-sm text-danger transition-colors hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              className="inline-flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-danger transition duration-150 hover:-translate-y-px hover:border-danger/40 hover:bg-danger/10 hover:shadow-sm active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
+              <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
               {t('common.delete')}
             </button>
           </div>
@@ -363,7 +365,7 @@ export function DeckDetailPage() {
         <section>
           <div className={`grid gap-8 sm:grid-cols-2 ${SECTION_GAP}`}>
             <div>
-              <h2 className="text-sm font-semibold text-fg">{t('analysis.strengths')}</h2>
+              <h2 className="text-sm font-semibold text-fg dark:text-accent-soft">{t('analysis.strengths')}</h2>
               {strengths.length === 0 ? (
                 <p className="mt-3 text-sm text-muted">{t('analysis.noStrengths')}</p>
               ) : (
@@ -384,7 +386,7 @@ export function DeckDetailPage() {
               )}
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-fg">{t('analysis.weaknesses')}</h2>
+              <h2 className="text-sm font-semibold text-fg dark:text-accent-soft">{t('analysis.weaknesses')}</h2>
               {!hasWeaknesses ? (
                 <p className="mt-3 text-sm text-muted">{t('analysis.noWeaknesses')}</p>
               ) : (
@@ -418,22 +420,22 @@ export function DeckDetailPage() {
           </div>
 
           <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
-            <div>
+            <div className="chart-panel">
               <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.manaCurve')}</h3>
               <ManaCurveChart manaCurve={analysis.manaCurve} />
             </div>
 
-            <div>
+            <div className="chart-panel">
               <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.colorDistribution')}</h3>
               <ColorDistributionChart colorDistribution={analysis.colorDistribution} />
             </div>
 
-            <div>
+            <div className="chart-panel">
               <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.typeDistribution')}</h3>
               <TypeDistributionChart typeDistribution={analysis.typeDistribution} />
             </div>
 
-            <div>
+            <div className="chart-panel">
               <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.validation')}</h3>
               <ValidationList validation={analysis.validation} />
             </div>
@@ -513,7 +515,9 @@ function TabBar<T extends string>({
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`-mb-px border-b-2 px-1 pb-3 text-sm font-medium transition-colors focus-visible:outline-none ${
-            active === tab.key ? 'border-accent text-fg' : 'border-transparent text-muted hover:text-fg'
+            active === tab.key
+              ? 'border-accent text-fg dark:border-accent-strong dark:text-accent-soft'
+              : 'border-transparent text-muted hover:text-fg'
           }`}
         >
           {tab.label}
@@ -757,7 +761,7 @@ function EntryRow({
     <li
       ref={rowRef}
       onPointerUp={handleRowPointerUp}
-      className="group flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm hover:bg-surface-hover"
+      className="group flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm transition-colors hover:bg-surface-hover"
     >
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
         <span className="truncate text-fg" title={name}>
