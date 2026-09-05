@@ -23,6 +23,19 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+export const UNAUTHORIZED_EVENT = 'auth:unauthorized'
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && getStoredToken()) {
+      setStoredToken(null)
+      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
+    }
+    return Promise.reject(error)
+  },
+)
+
 export function extractErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as { error?: string } | undefined
