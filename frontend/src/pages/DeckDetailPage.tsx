@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { deleteDeck, getDeck, getDeckAnalysis, updateDeck, upsertDeckEntry } from '../api/decks'
 import type { CardType, DeckAnalysisResult, DeckDetail, DeckSection } from '../api/types'
@@ -265,8 +265,8 @@ export function DeckDetailPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       {/* Deck identity */}
-      <div className={`flex items-start justify-between ${SECTION_GAP}`}>
-        <div className="flex-1">
+      <div className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${SECTION_GAP}`}>
+        <div className="min-w-0 flex-1">
           {isEditing ? (
             <div className="space-y-2">
               <input
@@ -293,9 +293,13 @@ export function DeckDetailPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight text-fg">{deck.name}</h1>
-                <span className="rounded bg-surface-hover px-2 py-0.5 text-xs text-muted">{deck.format}</span>
+              <div className="flex min-w-0 items-center gap-3">
+                <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-fg" title={deck.name}>
+                  {deck.name}
+                </h1>
+                <span className="shrink-0 rounded bg-surface-hover px-2 py-0.5 text-xs text-muted">
+                  {deck.format}
+                </span>
               </div>
               {deck.description && <p className="mt-1 text-sm text-muted">{deck.description}</p>}
             </>
@@ -685,6 +689,28 @@ function EntryRow({
   const [pendingTarget, setPendingTarget] = useState<DeckSection | null>(null)
   const [moveQty, setMoveQty] = useState(entry.quantity)
 
+  // Actions take zero layout width until revealed, so the card name gets the space instead of
+  // sharing it with a permanently-reserved (if invisible) action slot. Desktop reveals on hover
+  // via the [@media(hover:hover)]:group-hover: rule below (no re-render needed); touch devices
+  // don't have hover, so a tap toggles this state instead, and a tap outside the row closes it.
+  const [revealed, setRevealed] = useState(false)
+  const rowRef = useRef<HTMLLIElement>(null)
+
+  useEffect(() => {
+    if (!revealed) return
+    function handlePointerDownOutside(e: PointerEvent) {
+      if (rowRef.current && !rowRef.current.contains(e.target as Node)) {
+        setRevealed(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDownOutside)
+    return () => document.removeEventListener('pointerdown', handlePointerDownOutside)
+  }, [revealed])
+
+  function handleRowPointerUp(e: ReactPointerEvent<HTMLLIElement>) {
+    if (e.pointerType === 'touch') setRevealed((r) => !r)
+  }
+
   function handleSelectTarget(target: DeckSection) {
     if (entry.quantity <= 1) {
       void onMove(entry.cardName, entry.quantity, section, target)
@@ -701,7 +727,11 @@ function EntryRow({
   }
 
   return (
-    <li className="group flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm hover:bg-surface-hover">
+    <li
+      ref={rowRef}
+      onPointerUp={handleRowPointerUp}
+      className="group flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm hover:bg-surface-hover"
+    >
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
         <span className="truncate text-fg" title={entry.cardName}>
           {entry.cardName}
@@ -743,33 +773,40 @@ function EntryRow({
           </button>
         </div>
       ) : (
-        <div className="flex flex-shrink-0 items-center gap-1 opacity-100 transition-opacity duration-150 focus-within:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
-          <select
-            aria-label={`Move ${entry.cardName}`}
-            defaultValue=""
-            onChange={(e) => {
-              const target = e.target.value as DeckSection
-              if (target) handleSelectTarget(target)
-              e.target.value = ''
-            }}
-            className="rounded bg-transparent px-1 py-0.5 text-xs text-muted hover:text-fg"
-          >
-            <option value="" disabled className="bg-surface text-fg">
-              Move to…
-            </option>
-            {otherSections.map((s) => (
-              <option key={s} value={s} className="bg-surface text-fg">
-                {s}
+        <div
+          onPointerUp={(e) => e.stopPropagation()}
+          className={`grid shrink-0 transition-[grid-template-columns] duration-300 ease-out focus-within:grid-cols-[1fr] [@media(hover:hover)]:group-hover:grid-cols-[1fr] ${
+            revealed ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]'
+          }`}
+        >
+          <div className="flex min-w-0 items-center gap-1 overflow-hidden">
+            <select
+              aria-label={`Move ${entry.cardName}`}
+              defaultValue=""
+              onChange={(e) => {
+                const target = e.target.value as DeckSection
+                if (target) handleSelectTarget(target)
+                e.target.value = ''
+              }}
+              className="rounded bg-transparent px-1 py-0.5 text-xs text-muted hover:text-fg"
+            >
+              <option value="" disabled className="bg-surface text-fg">
+                Move to…
               </option>
-            ))}
-          </select>
-          <button
-            onClick={() => void onRemove(entry.cardName, section)}
-            aria-label={`Remove ${entry.cardName}`}
-            className="rounded p-1 text-muted transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <TrashIcon />
-          </button>
+              {otherSections.map((s) => (
+                <option key={s} value={s} className="bg-surface text-fg">
+                  {s}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => void onRemove(entry.cardName, section)}
+              aria-label={`Remove ${entry.cardName}`}
+              className="rounded p-1 text-muted transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <TrashIcon />
+            </button>
+          </div>
         </div>
       )}
     </li>

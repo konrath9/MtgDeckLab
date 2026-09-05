@@ -8,12 +8,12 @@ export function NavBar() {
 
   return (
     <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
         <Link to="/" className="text-lg font-semibold tracking-tight text-fg">
           MTG Deck Lab
         </Link>
         {isAuthenticated && (
-          <nav className="flex items-center gap-4 text-sm">
+          <nav className="flex items-center gap-3 text-sm sm:gap-4">
             <NavLink to="/" active={location.pathname === '/'}>
               My Decks
             </NavLink>
