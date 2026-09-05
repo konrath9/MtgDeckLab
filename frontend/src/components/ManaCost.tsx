@@ -1,11 +1,16 @@
-// Renders a Magic mana cost (e.g. "{2}{U}{U}") as colored pips using the mana-font icon font
-// (https://mana.andrewgioia.com, npm package "mana-font", CSS imported once in main.tsx).
+// Renders a Magic mana cost (e.g. "{2}{U}{U}") using Scryfall's own card-symbol SVGs
+// (https://svgs.scryfall.io/card-symbols/<SYMBOL>.svg) — Scryfall is this project's single
+// source of truth for MTG data and assets, icons included; no third-party icon font or custom
+// CSS shape stands in for a symbol Scryfall already serves.
 //
-// Class naming: lowercase the symbol, drop slashes — "W" -> "ms-w", "W/U" -> "ms-wu",
-// "2/W" -> "ms-2w", "W/P" -> "ms-wp", "W/U/P" -> "ms-wup". `ms-cost` gives the circular
-// colored background matching how costs appear on a real card.
-export function manaSymbolClass(symbol: string): string {
-  return symbol.toLowerCase().replace(/\//g, '')
+// Scryfall's own /symbology endpoint confirms the filename convention this builds: uppercase the
+// symbol and drop slashes — "W" -> "W.svg", "W/U" -> "WU.svg", "2/W" -> "2W.svg",
+// "W/P" -> "WP.svg". The SVGs already render as the familiar colored circular pips, so no extra
+// styling is needed beyond sizing them.
+const SCRYFALL_SYMBOL_BASE_URL = 'https://svgs.scryfall.io/card-symbols/'
+
+export function manaSymbolCode(symbol: string): string {
+  return symbol.toUpperCase().replace(/\//g, '')
 }
 
 export function parseManaSymbols(manaCost: string): string[] {
@@ -26,7 +31,7 @@ export function ManaCost({ manaCost, className = '' }: { manaCost: string | null
   if (faces.length === 0) return null
 
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1 text-xs ${className}`} aria-label={manaCost}>
+    <span className={`inline-flex shrink-0 items-center gap-1 ${className}`} aria-label={manaCost}>
       {faces.map((symbols, faceIndex) => (
         <span key={faceIndex} className="inline-flex items-center gap-0.5">
           {faceIndex > 0 && (
@@ -35,7 +40,13 @@ export function ManaCost({ manaCost, className = '' }: { manaCost: string | null
             </span>
           )}
           {symbols.map((s, i) => (
-            <i key={i} className={`ms ms-cost ms-${manaSymbolClass(s)}`} aria-hidden="true" />
+            <img
+              key={i}
+              src={`${SCRYFALL_SYMBOL_BASE_URL}${manaSymbolCode(s)}.svg`}
+              alt=""
+              aria-hidden="true"
+              className="h-3.5 w-3.5"
+            />
           ))}
         </span>
       ))}
