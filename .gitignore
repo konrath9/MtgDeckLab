@@ -62,6 +62,10 @@ docker-compose.override.yml
 Thumbs.db
 Desktop.ini
 
+# Git Bash (MSYS2) crash dumps — bash.exe occasionally stack-overflows on Windows with heavy
+# background-job usage; harmless, but shouldn't get committed.
+*.stackdump
+
 ## ── Logs ─────────────────────────────────────────────────────────────────────
 logs/
 *.log
