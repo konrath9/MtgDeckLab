@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #0e0e10;
+  --color-surface: #161618;
+  --color-surface-hover: #1c1c1f;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  --color-fg: #f5f5f5;
+  --color-muted: #92929a;
+
+  --color-accent: #5e6ad2;
+  --color-accent-strong: #7583e8;
+
+  --color-danger: #e5484d;
+  --color-warning: #e8a33d;
+  --color-success: #46a758;
+}
+
 body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+  @apply bg-bg font-sans text-fg antialiased;
 }

@@ -28,25 +28,25 @@ export function DeckListPage() {
   }, [page])
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-100">My Decks</h1>
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight text-fg">My Decks</h1>
         <Link
           to="/decks/import"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
-          + Import Deck
+          Import Deck
         </Link>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
-      {decks === null && !error && <p className="text-slate-400">Loading…</p>}
+      {decks === null && !error && <p className="text-muted">Loading…</p>}
 
       {decks !== null && decks.length === 0 && (
-        <p className="text-slate-400">
+        <p className="text-muted">
           No decks yet.{' '}
-          <Link to="/decks/import" className="text-blue-400 hover:underline">
+          <Link to="/decks/import" className="text-accent-strong hover:underline">
             Import your first one.
           </Link>
         </p>
@@ -58,18 +58,14 @@ export function DeckListPage() {
             <Link
               key={deck.id}
               to={`/decks/${deck.id}`}
-              className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 hover:border-slate-600"
+              className="rounded-md border border-border bg-surface p-4 transition-colors hover:border-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
               <div className="flex items-center justify-between">
-                <h2 className="font-medium text-slate-100">{deck.name}</h2>
-                <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300">
-                  {deck.format}
-                </span>
+                <h2 className="font-medium text-fg">{deck.name}</h2>
+                <span className="rounded bg-surface-hover px-2 py-0.5 text-xs text-muted">{deck.format}</span>
               </div>
-              {deck.description && (
-                <p className="mt-1 line-clamp-2 text-sm text-slate-400">{deck.description}</p>
-              )}
-              <p className="mt-2 text-xs text-slate-500">
+              {deck.description && <p className="mt-1 line-clamp-2 text-sm text-muted">{deck.description}</p>}
+              <p className="mt-2 text-xs text-muted">
                 {deck.mainDeckCount} main · {deck.sideboardCount} sideboard
               </p>
             </Link>
@@ -78,21 +74,21 @@ export function DeckListPage() {
       )}
 
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-3 text-sm text-slate-300">
+        <div className="mt-6 flex items-center justify-center gap-3 text-sm text-fg">
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="rounded-md bg-slate-800 px-3 py-1.5 disabled:opacity-40"
+            className="rounded-md border border-border px-3 py-1.5 transition-colors hover:bg-surface-hover disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             Previous
           </button>
-          <span>
+          <span className="text-muted">
             Page {page} of {totalPages}
           </span>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="rounded-md bg-slate-800 px-3 py-1.5 disabled:opacity-40"
+            className="rounded-md border border-border px-3 py-1.5 transition-colors hover:bg-surface-hover disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             Next
           </button>
