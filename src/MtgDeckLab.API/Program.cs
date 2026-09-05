@@ -43,6 +43,7 @@ if (app.Environment.IsProduction())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
