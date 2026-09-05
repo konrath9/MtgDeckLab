@@ -10,6 +10,7 @@ using MtgDeckLab.Application.Interfaces;
 using MtgDeckLab.Application.Localization;
 using MtgDeckLab.Infrastructure.Auth;
 using MtgDeckLab.Infrastructure.Data;
+using MtgDeckLab.Infrastructure.ExchangeRates;
 using MtgDeckLab.Infrastructure.Localization;
 using MtgDeckLab.Infrastructure.Repositories;
 using MtgDeckLab.Infrastructure.Scryfall;
@@ -45,7 +46,15 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMinutes(10);
         });
 
+        services.AddSingleton<IExchangeRateStore, InMemoryExchangeRateStore>();
+        services.AddHttpClient<IExchangeRateFetcher, FrankfurterExchangeRateFetcher>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.frankfurter.dev/v1/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         AddScheduledSyncs(services, configuration);
+        AddExchangeRateSync(services, configuration);
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -147,5 +156,20 @@ public static class DependencyInjection
             sp.GetRequiredService<ILogger<ScryfallTranslationSyncBackgroundService>>(),
             TimeSpan.FromHours(translationIntervalHours),
             languages));
+    }
+
+    private static void AddExchangeRateSync(IServiceCollection services, IConfiguration configuration)
+    {
+        var scheduledSyncEnabled =
+            !bool.TryParse(configuration["ExchangeRates:ScheduledSyncEnabled"], out var enabled) || enabled;
+        if (!scheduledSyncEnabled) return;
+
+        var intervalHours =
+            double.TryParse(configuration["ExchangeRates:SyncIntervalHours"], out var h) ? h : 24;
+
+        services.AddHostedService(sp => new ExchangeRateSyncBackgroundService(
+            sp.GetRequiredService<IServiceScopeFactory>(),
+            sp.GetRequiredService<ILogger<ExchangeRateSyncBackgroundService>>(),
+            TimeSpan.FromHours(intervalHours)));
     }
 }

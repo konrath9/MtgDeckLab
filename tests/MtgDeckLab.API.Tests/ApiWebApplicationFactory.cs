@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using MtgDeckLab.Infrastructure.Data;
@@ -34,20 +33,24 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLi
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Configuração injetada antes do Program.cs rodar — sobrepõe appsettings
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = _postgres.GetConnectionString(),
-                ["Jwt:Secret"] = "test-secret-key-must-be-32-chars-long!!",
-                ["Jwt:Issuer"] = "MtgDeckLab",
-                ["Jwt:Audience"] = "MtgDeckLab",
-                ["Jwt:ExpiresInHours"] = "1",
-                ["Admin:Emails"] = "admin@test.com",
-                ["Scryfall:ScheduledSyncEnabled"] = "false"
-            });
-        });
+        // UseSetting, não ConfigureAppConfiguration+AddInMemoryCollection: Program.cs usa hosting
+        // mínimo (WebApplication.CreateBuilder) e lê algumas dessas chaves de forma síncrona e
+        // antecipada dentro de AddInfrastructure (ex.: o gate de ScheduledSyncEnabled, decidido
+        // no momento do registro do serviço, não só quando ele efetivamente roda). Uma fonte
+        // adicionada via ConfigureAppConfiguration só entra depois desse ponto — o valor lido ali
+        // ainda seria o do appsettings.json. UseSetting entra na configuração de host bem mais
+        // cedo (a mesma camada usada por variável de ambiente/linha de comando), a tempo de valer
+        // pra esses reads antecipados. (Descoberto quando o sync de câmbio — que, ao contrário do
+        // da Scryfall, dispara imediatamente — vazou uma chamada HTTP real nos testes mesmo com
+        // ScheduledSyncEnabled=false aqui.)
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _postgres.GetConnectionString());
+        builder.UseSetting("Jwt:Secret", "test-secret-key-must-be-32-chars-long!!");
+        builder.UseSetting("Jwt:Issuer", "MtgDeckLab");
+        builder.UseSetting("Jwt:Audience", "MtgDeckLab");
+        builder.UseSetting("Jwt:ExpiresInHours", "1");
+        builder.UseSetting("Admin:Emails", "admin@test.com");
+        builder.UseSetting("Scryfall:ScheduledSyncEnabled", "false");
+        builder.UseSetting("ExchangeRates:ScheduledSyncEnabled", "false");
 
         // Substituir o DbContext para apontar ao container de teste
         builder.ConfigureServices(services =>

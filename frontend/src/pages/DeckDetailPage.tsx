@@ -6,6 +6,7 @@ import { deleteDeck, getDeck, getDeckAnalysis, updateDeck, upsertDeckEntry } fro
 import type { CardType, DeckAnalysisResult, DeckDetail, DeckSection } from '../api/types'
 import { extractErrorMessage } from '../api/client'
 import { useFormatters } from '../i18n/format'
+import { useCurrency } from '../currency/CurrencyContext'
 import { ScoreBadge } from '../components/ScoreBadge'
 import { ManaCost } from '../components/ManaCost'
 import { ManaCurveChart } from '../components/ManaCurveChart'
@@ -117,7 +118,8 @@ export function DeckDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
-  const { usd, twoDecimals } = useFormatters()
+  const { twoDecimals } = useFormatters()
+  const { formatUsd } = useCurrency()
 
   const [deck, setDeck] = useState<DeckDetail | null>(null)
   const [analysis, setAnalysis] = useState<DeckAnalysisResult | null>(null)
@@ -447,7 +449,7 @@ export function DeckDetailPage() {
             {t('deck.entries.heading', { counts: entryCounts })}
           </h2>
           <p className="mb-4 text-xs text-muted">
-            {t('deck.entries.subtitle', { value: usd.format(totalValueUsd) })}
+            {t('deck.entries.subtitle', { value: formatUsd(totalValueUsd) })}
           </p>
 
           <AddCardToDeckForm onAdd={handleAddCard} />
@@ -704,7 +706,7 @@ function EntryRow({
   onMove: (cardName: string, moveQuantity: number, fromSection: DeckSection, toSection: DeckSection) => Promise<void>
 }) {
   const { t } = useTranslation()
-  const { usd } = useFormatters()
+  const { formatUsd } = useCurrency()
 
   // A single copy can just move — nothing to choose. With 2+ copies, ask how many, defaulting
   // to "all" so the common case is still one click, but a partial move is just as easy.
@@ -767,7 +769,7 @@ function EntryRow({
       <span className="flex shrink-0 items-center gap-2 text-xs text-muted tabular-nums">
         <ManaCost manaCost={entry.manaCost} />
         <span className="w-16 text-right" title={t('deck.entries.price')}>
-          {entry.priceUsd != null ? usd.format(entry.priceUsd) : '—'}
+          {entry.priceUsd != null ? formatUsd(entry.priceUsd) : '—'}
         </span>
       </span>
 
