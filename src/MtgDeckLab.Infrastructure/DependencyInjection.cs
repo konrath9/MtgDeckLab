@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         {
             client.BaseAddress = new Uri("https://api.scryfall.com/");
             client.DefaultRequestHeaders.UserAgent.ParseAdd("MtgDeckLab/1.0 (portfolio project)");
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             client.Timeout = TimeSpan.FromMinutes(10);
         });
 
