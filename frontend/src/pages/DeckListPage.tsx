@@ -31,25 +31,35 @@ export function DeckListPage() {
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight text-fg">My Decks</h1>
-        <Link
-          to="/decks/import"
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-        >
-          Import Deck
-        </Link>
+        {decks !== null && decks.length > 0 && (
+          <Link
+            to="/decks/import"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            Import Deck
+          </Link>
+        )}
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
 
       {decks === null && !error && <p className="text-muted">Loading…</p>}
 
+      {/* Empty state doubles as this app's landing moment — the primary action ("analyze your
+          deck") should be obvious and undistracted, not a quiet inline link. */}
       {decks !== null && decks.length === 0 && (
-        <p className="text-muted">
-          No decks yet.{' '}
-          <Link to="/decks/import" className="text-accent-strong hover:underline">
-            Import your first one.
+        <div className="flex flex-col items-center gap-3 rounded-md border border-border py-20 text-center">
+          <h2 className="text-xl font-semibold tracking-tight text-fg">Analyze your deck</h2>
+          <p className="max-w-sm text-sm text-muted">
+            Paste a decklist to see its mana curve, color balance, and format legality in seconds.
+          </p>
+          <Link
+            to="/decks/import"
+            className="mt-2 rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+          >
+            Import a deck
           </Link>
-        </p>
+        </div>
       )}
 
       {decks !== null && decks.length > 0 && (
