@@ -1,0 +1,209 @@
+{
+  "common": {
+    "loading": "Carregando…",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "pageOf": "Página {{page}} de {{total}}",
+    "email": "E-mail",
+    "password": "Senha"
+  },
+  "nav": {
+    "brand": "MTG Deck Lab",
+    "myDecks": "Meus Decks",
+    "importDeck": "Importar Deck",
+    "logOut": "Sair",
+    "language": "Idioma"
+  },
+  "sections": {
+    "Main": "Deck Principal",
+    "Commander": "Comandante",
+    "Sideboard": "Sideboard",
+    "Maybeboard": "Maybeboard"
+  },
+  "cardTypes": {
+    "Creature": "Criaturas",
+    "Planeswalker": "Planeswalkers",
+    "Battle": "Batalhas",
+    "Instant": "Mágicas instantâneas",
+    "Sorcery": "Feitiços",
+    "Artifact": "Artefatos",
+    "Enchantment": "Encantamentos",
+    "Tribal": "Tribais",
+    "Land": "Terrenos",
+    "Other": "Outros"
+  },
+  "colors": {
+    "White": "Branco",
+    "Blue": "Azul",
+    "Black": "Preto",
+    "Red": "Vermelho",
+    "Green": "Verde",
+    "Colorless": "Incolor",
+    "Multicolor": "Multicolorida"
+  },
+  "lands": {
+    "Plains": "Planície",
+    "Island": "Ilha",
+    "Swamp": "Pântano",
+    "Mountain": "Montanha",
+    "Forest": "Floresta",
+    "Colorless": "Incolor",
+    "Nonbasic": "Não básico"
+  },
+  "auth": {
+    "login": {
+      "title": "Entrar",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "noAccount": "Não tem conta?",
+      "registerLink": "Cadastre-se",
+      "error": "E-mail ou senha inválidos."
+    },
+    "register": {
+      "title": "Criar conta",
+      "submit": "Criar conta",
+      "submitting": "Criando conta…",
+      "haveAccount": "Já tem conta?",
+      "loginLink": "Entrar",
+      "error": "Não foi possível criar a conta."
+    }
+  },
+  "deckList": {
+    "title": "Meus Decks",
+    "importCta": "Importar Deck",
+    "error": "Não foi possível carregar seus decks.",
+    "empty": {
+      "title": "Analise seu deck",
+      "description": "Cole uma decklist e veja curva de mana, equilíbrio de cores e legalidade no formato em segundos.",
+      "cta": "Importar um deck"
+    },
+    "counts": "{{main}} no principal · {{sideboard}} no sideboard"
+  },
+  "import": {
+    "title": "Importar Deck",
+    "subtitle": "Cole uma decklist e veja curva de mana, equilíbrio de cores e legalidade.",
+    "deckName": "Nome do deck",
+    "format": "Formato",
+    "commander": "Comandante",
+    "commanderPlaceholder": "1 Atraxa, Praetors' Voice",
+    "description": "Descrição (opcional)",
+    "mainDeck": "Deck Principal",
+    "mainDeckPlaceholder": "4 Relâmpago\n20 Montanha",
+    "mainDeckHint": "Uma carta por linha — ex.: \"4 Relâmpago\". Você pode colar a lista inteira aqui: as marcações SB:/#Commander continuam valendo.",
+    "languageHint": "Os nomes das cartas podem estar em português ou inglês.",
+    "addOptional": "+ Adicionar cartas de sideboard ou maybeboard",
+    "sideboard": "Sideboard",
+    "sideboardPlaceholder": "2 Coação",
+    "maybeboard": "Maybeboard",
+    "maybeboardPlaceholder": "1 Rhystic Study",
+    "maybeboardHint": "Cartas que você está considerando mas ainda não incluiu — ficam fora da nota, da curva e da validação.",
+    "unresolved": "Não encontradas em {{section}}: {{cards}}",
+    "continueToDeck": "Ir para o deck",
+    "submit": "Importar Deck",
+    "submitting": "Importando…",
+    "error": "Não foi possível importar o deck."
+  },
+  "deck": {
+    "notFound": "Deck não encontrado.",
+    "nameLabel": "Nome do deck",
+    "descriptionLabel": "Descrição",
+    "deleteConfirm": "Excluir este deck? Não dá para desfazer.",
+    "errors": {
+      "update": "Não foi possível atualizar o deck.",
+      "delete": "Não foi possível excluir o deck.",
+      "addCard": "Não foi possível encontrar a carta \"{{card}}\".",
+      "removeCard": "Não foi possível remover a carta.",
+      "moveCard": "Não foi possível mover a carta."
+    },
+    "tabs": {
+      "entries": "Cartas",
+      "analysis": "Análise"
+    },
+    "entries": {
+      "heading": "Cartas ({{counts}})",
+      "countMain": "{{count}} no principal",
+      "countSideboard": "{{count}} no sideboard",
+      "countMaybeboard": "{{count}} no maybeboard",
+      "subtitle": "Adicione, mova ou remova cartas. Valor estimado: {{value}}",
+      "maybeboardCaption": "fora da análise",
+      "categoryCount": "{{category}} ({{count}})",
+      "addCard": "Adicionar carta",
+      "cardNamePlaceholder": "Nome da carta",
+      "quantity": "Qtd",
+      "section": "Seção",
+      "add": "Adicionar",
+      "adding": "Adicionando…",
+      "price": "Preço",
+      "move": "Mover",
+      "moveTo": "Mover para…",
+      "moveToSection": "para {{section}}",
+      "moveQuantityLabel": "Quantidade de {{card}} a mover",
+      "moveCardLabel": "Mover {{card}}",
+      "removeCardLabel": "Remover {{card}}"
+    }
+  },
+  "analysis": {
+    "loading": "Carregando análise…",
+    "error": "Não foi possível carregar a análise.",
+    "strengths": "Pontos fortes",
+    "noStrengths": "Nenhum ponto forte em destaque ainda.",
+    "weaknesses": "Precisa de atenção",
+    "noWeaknesses": "Nenhuma fraqueza relevante detectada.",
+    "verdict": {
+      "illegal_one": "Este deck está fora das regras de {{format}} — {{count}} problema para resolver antes de ficar legal.",
+      "illegal_other": "Este deck está fora das regras de {{format}} — {{count}} problemas para resolver antes de ficar legal.",
+      "legalWithWarnings_one": "Legal em {{format}}, com {{count}} ponto que vale revisar abaixo.",
+      "legalWithWarnings_other": "Legal em {{format}}, com {{count}} pontos que valem revisar abaixo.",
+      "legal": "Legal em {{format}}, sem problemas detectados."
+    },
+    "components": {
+      "ManaCurve": "Curva de mana",
+      "LandRatio": "Proporção de terrenos",
+      "ColorConsistency": "Consistência de cores",
+      "RuleCompliance": "Legalidade no formato"
+    },
+    "captions": {
+      "averageCmc": "Custo de mana médio {{value}}",
+      "landsOfTotal_one": "{{count}} terreno de {{total}}",
+      "landsOfTotal_other": "{{count}} terrenos de {{total}}",
+      "colorless": "Incolor",
+      "colorCount_one": "{{count}} cor",
+      "colorCount_other": "{{count}} cores",
+      "noViolations": "Nenhuma violação de regra",
+      "violations_one": "{{count}} violação de regra",
+      "violations_other": "{{count}} violações de regra"
+    },
+    "charts": {
+      "manaCurve": "Curva de mana",
+      "colorDistribution": "Distribuição de cores",
+      "typeDistribution": "Distribuição de tipos",
+      "validation": "Validação do formato",
+      "cards": "Cartas",
+      "manaValue": "Custo de mana {{value}}",
+      "averageCmc": "Custo médio",
+      "peak": "Pico",
+      "nonLandCards": "Cartas não-terreno",
+      "emptyManaCurve": "Nenhuma carta não-terreno para exibir ainda.",
+      "emptyColors": "Este deck não tem cartas coloridas.",
+      "emptyTypes": "Nenhuma carta para exibir ainda.",
+      "colorFootnote": "Cada carta conta uma vez por cor que possui, então cartas multicoloridas aparecem em mais de uma linha — <0>Multicolorida</0> soma as cartas com duas ou mais cores.",
+      "landsFootnote": "Passe o mouse sobre a barra de terrenos para ver a divisão por cor básica e não básicos."
+    },
+    "validation": {
+      "noIssues": "Nenhum problema detectado."
+    },
+    "score": {
+      "outOf": "/ 100",
+      "A": { "label": "Excelente", "description": "Fundamentos sólidos em todas as frentes." },
+      "B": { "label": "Bom", "description": "Deck consistente, com lacunas pequenas." },
+      "C": { "label": "Razoável", "description": "Jogável, mas vários pontos pedem atenção." },
+      "D": { "label": "Fraco", "description": "Problemas relevantes afetando a consistência." },
+      "F": { "label": "Ruim", "description": "Problemas estruturais graves a resolver." }
+    }
+  }
+}

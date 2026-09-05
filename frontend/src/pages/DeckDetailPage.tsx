@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { deleteDeck, getDeck, getDeckAnalysis, updateDeck, upsertDeckEntry } from '../api/decks'
 import type { CardType, DeckAnalysisResult, DeckDetail, DeckSection } from '../api/types'
 import { extractErrorMessage } from '../api/client'
+import { useFormatters } from '../i18n/format'
 import { ScoreBadge } from '../components/ScoreBadge'
 import { ManaCost } from '../components/ManaCost'
 import { ManaCurveChart } from '../components/ManaCurveChart'
@@ -24,13 +27,6 @@ const SECTION_GAP = 'mb-8 border-b border-border pb-8'
 
 const SECTIONS: DeckSection[] = ['Main', 'Commander', 'Sideboard', 'Maybeboard']
 
-// Friendly labels for DeckScore.componentScores keys (MtgDeckLab.Engine.Analysis.DeckScorer).
-const COMPONENT_LABELS: Record<string, string> = {
-  ManaCurve: 'Mana Curve',
-  LandRatio: 'Land Ratio',
-  ColorConsistency: 'Color Consistency',
-  RuleCompliance: 'Format Legality',
-}
 const STRENGTH_THRESHOLD = 80
 
 // Priority order for picking one display category out of a (possibly multi-type) card's
@@ -47,18 +43,6 @@ const TYPE_CATEGORY_ORDER: CardType[] = [
   'Tribal',
   'Land',
 ]
-const CATEGORY_LABELS: Record<string, string> = {
-  Creature: 'Creatures',
-  Planeswalker: 'Planeswalkers',
-  Battle: 'Battles',
-  Instant: 'Instants',
-  Sorcery: 'Sorceries',
-  Artifact: 'Artifacts',
-  Enchantment: 'Enchantments',
-  Tribal: 'Tribals',
-  Land: 'Lands',
-  Other: 'Other',
-}
 
 function categorize(types: CardType[]): string {
   for (const t of TYPE_CATEGORY_ORDER) {
@@ -81,36 +65,48 @@ function groupByCategory(
     .map((category) => ({ category, entries: buckets.get(category)! }))
 }
 
-function buildVerdict(analysis: DeckAnalysisResult, format: string): string {
+// Nome canônico (inglês) para falar com a API, nome impresso no idioma do usuário para mostrar.
+function displayName(entry: DeckDetail['entries'][number]): string {
+  return entry.localizedName ?? entry.cardName
+}
+
+function buildVerdict(analysis: DeckAnalysisResult, format: string, t: TFunction): string {
   const { score, validation } = analysis
   if (!validation.isValid) {
-    const count = validation.errors.length
-    return `This deck currently breaks ${format} rules — ${count} issue${count === 1 ? '' : 's'} to fix before it's legal.`
+    return t('analysis.verdict.illegal', { format, count: validation.errors.length })
   }
   if (score.warnings.length > 0) {
-    const count = score.warnings.length
-    return `Legal for ${format}, with ${count} area${count === 1 ? '' : 's'} worth reviewing below.`
+    return t('analysis.verdict.legalWithWarnings', { format, count: score.warnings.length })
   }
-  return `Legal for ${format} with no issues detected.`
+  return t('analysis.verdict.legal', { format })
 }
 
 // Short factual caption per score component, built only from fields already on
 // DeckAnalysisResult — never a judgment, just the real number(s) behind that component's score.
-function componentCaption(key: string, analysis: DeckAnalysisResult): string | null {
+function componentCaption(
+  key: string,
+  analysis: DeckAnalysisResult,
+  t: TFunction,
+  formatDecimal: (value: number) => string,
+): string | null {
   switch (key) {
     case 'ManaCurve':
-      return `Average CMC ${analysis.manaCurve.averageCmc.toFixed(2)}`
+      return t('analysis.captions.averageCmc', { value: formatDecimal(analysis.manaCurve.averageCmc) })
     case 'LandRatio': {
       const { lands, total } = analysis.typeDistribution
-      return `${lands} land${lands === 1 ? '' : 's'} of ${total}`
+      return t('analysis.captions.landsOfTotal', { count: lands, total })
     }
     case 'ColorConsistency': {
       const colorCount = Object.keys(analysis.colorDistribution.cardCount).length
-      return colorCount === 0 ? 'Colorless' : `${colorCount} color${colorCount === 1 ? '' : 's'}`
+      return colorCount === 0
+        ? t('analysis.captions.colorless')
+        : t('analysis.captions.colorCount', { count: colorCount })
     }
     case 'RuleCompliance': {
       const count = analysis.validation.errors.length
-      return count === 0 ? 'No rule violations' : `${count} rule violation${count === 1 ? '' : 's'}`
+      return count === 0
+        ? t('analysis.captions.noViolations')
+        : t('analysis.captions.violations', { count })
     }
     default:
       return null
@@ -120,6 +116,8 @@ function componentCaption(key: string, analysis: DeckAnalysisResult): string | n
 export function DeckDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
+  const { usd, twoDecimals } = useFormatters()
 
   const [deck, setDeck] = useState<DeckDetail | null>(null)
   const [analysis, setAnalysis] = useState<DeckAnalysisResult | null>(null)
@@ -140,15 +138,22 @@ export function DeckDetailPage() {
     setDeck(data)
     getDeckAnalysis(id)
       .then((a) => setAnalysis(a))
-      .catch((err) => setAnalysisError(extractErrorMessage(err, 'Could not load analysis.')))
+      .catch((err) => setAnalysisError(extractErrorMessage(err, t('analysis.error'))))
   }
 
+  // Trocar de deck limpa o que está na tela; trocar só de idioma não — a re-busca por idioma
+  // substitui o conteúdo no lugar, sem piscar um estado de carregamento no meio da leitura.
+  useEffect(() => {
+    setDeck(null)
+    setAnalysis(null)
+  }, [id])
+
+  // Trocar de idioma re-busca deck e análise: os nomes das cartas e o texto das mensagens são
+  // resolvidos no servidor, a partir do idioma que o cliente envia em cada requisição.
   useEffect(() => {
     if (!id) return
     let cancelled = false
 
-    setDeck(null)
-    setAnalysis(null)
     setError(null)
     setAnalysisError(null)
 
@@ -159,16 +164,16 @@ export function DeckDetailPage() {
         setEditName(data.name)
         setEditDescription(data.description ?? '')
       })
-      .catch((err) => !cancelled && setError(extractErrorMessage(err, 'Deck not found.')))
+      .catch((err) => !cancelled && setError(extractErrorMessage(err, t('deck.notFound'))))
 
     getDeckAnalysis(id)
       .then((data) => !cancelled && setAnalysis(data))
-      .catch((err) => !cancelled && setAnalysisError(extractErrorMessage(err, 'Could not load analysis.')))
+      .catch((err) => !cancelled && setAnalysisError(extractErrorMessage(err, t('analysis.error'))))
 
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, i18n.language, t])
 
   async function handleSave() {
     if (!id) return
@@ -178,7 +183,7 @@ export function DeckDetailPage() {
       setDeck(updated)
       setIsEditing(false)
     } catch (err) {
-      setError(extractErrorMessage(err, 'Could not update deck.'))
+      setError(extractErrorMessage(err, t('deck.errors.update')))
     } finally {
       setIsSaving(false)
     }
@@ -186,12 +191,12 @@ export function DeckDetailPage() {
 
   async function handleDelete() {
     if (!id) return
-    if (!confirm('Delete this deck? This cannot be undone.')) return
+    if (!confirm(t('deck.deleteConfirm'))) return
     try {
       await deleteDeck(id)
       navigate('/')
     } catch (err) {
-      setError(extractErrorMessage(err, 'Could not delete deck.'))
+      setError(extractErrorMessage(err, t('deck.errors.delete')))
     }
   }
 
@@ -202,7 +207,7 @@ export function DeckDetailPage() {
       await upsertDeckEntry(id, cardName, quantity, section)
       await refetchDeck()
     } catch (err) {
-      setEntryError(extractErrorMessage(err, `Could not find card "${cardName}".`))
+      setEntryError(extractErrorMessage(err, t('deck.errors.addCard', { card: cardName })))
     }
   }
 
@@ -213,7 +218,7 @@ export function DeckDetailPage() {
       await upsertDeckEntry(id, cardName, 0, section)
       await refetchDeck()
     } catch (err) {
-      setEntryError(extractErrorMessage(err, 'Could not remove card.'))
+      setEntryError(extractErrorMessage(err, t('deck.errors.removeCard')))
     }
   }
 
@@ -237,12 +242,12 @@ export function DeckDetailPage() {
       await upsertDeckEntry(id, cardName, combined, toSection)
       await refetchDeck()
     } catch (err) {
-      setEntryError(extractErrorMessage(err, 'Could not move card.'))
+      setEntryError(extractErrorMessage(err, t('deck.errors.moveCard')))
     }
   }
 
   if (error) return <p className="mx-auto max-w-5xl px-4 py-10 text-danger">{error}</p>
-  if (!deck) return <p className="mx-auto max-w-5xl px-4 py-10 text-muted">Loading…</p>
+  if (!deck) return <p className="mx-auto max-w-5xl px-4 py-10 text-muted">{t('common.loading')}</p>
 
   const mainEntries = deck.entries.filter((e) => e.section === 'Main')
   const commanderEntries = deck.entries.filter((e) => e.section === 'Commander')
@@ -255,12 +260,21 @@ export function DeckDetailPage() {
     .concat(commanderEntries)
     .reduce((sum, e) => sum + (e.priceUsd ?? 0) * e.quantity, 0)
 
+  const entryCounts = [
+    t('deck.entries.countMain', { count: deck.mainDeckCount }),
+    ...(deck.sideboardCount > 0 ? [t('deck.entries.countSideboard', { count: deck.sideboardCount })] : []),
+    ...(deck.maybeboardCount > 0 ? [t('deck.entries.countMaybeboard', { count: deck.maybeboardCount })] : []),
+  ].join(', ')
+
   const componentEntries = analysis ? Object.entries(analysis.score.componentScores) : []
   const strengths = componentEntries.filter(([, v]) => v >= STRENGTH_THRESHOLD).sort((a, b) => b[1] - a[1])
   const weakComponents = componentEntries.filter(([, v]) => v < STRENGTH_THRESHOLD).sort((a, b) => a[1] - b[1])
   const hasWeaknesses = analysis
     ? analysis.validation.errors.length > 0 || analysis.score.warnings.length > 0 || weakComponents.length > 0
     : false
+
+  const captionFor = (key: string) =>
+    analysis ? componentCaption(key, analysis, t, (v) => twoDecimals.format(v)) : null
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -270,24 +284,24 @@ export function DeckDetailPage() {
           {isEditing ? (
             <div className="space-y-2">
               <input
-                aria-label="Deck name"
+                aria-label={t('deck.nameLabel')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 className={`${INPUT_CLASS} text-xl font-semibold`}
               />
               <input
-                aria-label="Description"
+                aria-label={t('deck.descriptionLabel')}
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Description"
+                placeholder={t('deck.descriptionLabel')}
                 className={`${INPUT_CLASS} text-sm`}
               />
               <div className="flex gap-2">
                 <button onClick={handleSave} disabled={isSaving} className={PRIMARY_BUTTON_CLASS}>
-                  {isSaving ? 'Saving…' : 'Save'}
+                  {isSaving ? t('common.saving') : t('common.save')}
                 </button>
                 <button onClick={() => setIsEditing(false)} className={GHOST_BUTTON_CLASS}>
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -308,13 +322,13 @@ export function DeckDetailPage() {
         {!isEditing && (
           <div className="flex gap-2">
             <button onClick={() => setIsEditing(true)} className={GHOST_BUTTON_CLASS}>
-              Edit
+              {t('common.edit')}
             </button>
             <button
               onClick={handleDelete}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-danger transition-colors hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
             >
-              Delete
+              {t('common.delete')}
             </button>
           </div>
         )}
@@ -323,11 +337,11 @@ export function DeckDetailPage() {
       {/* Score + verdict — stays visible above the tabs: the one quick-scan summary the user
           should always have in view, kept deliberately minimal so it doesn't crowd out Entries. */}
       {analysisError && <p className="text-sm text-danger">{analysisError}</p>}
-      {!analysis && !analysisError && <p className="text-muted">Loading analysis…</p>}
+      {!analysis && !analysisError && <p className="text-muted">{t('analysis.loading')}</p>}
       {analysis && (
         <div className={SECTION_GAP}>
           <ScoreBadge score={analysis.score.score} grade={analysis.score.grade} />
-          <p className="mt-5 max-w-2xl text-base text-fg">{buildVerdict(analysis, deck.format)}</p>
+          <p className="mt-5 max-w-2xl text-base text-fg">{buildVerdict(analysis, deck.format, t)}</p>
         </div>
       )}
 
@@ -337,8 +351,8 @@ export function DeckDetailPage() {
         active={activeTab}
         onChange={setActiveTab}
         tabs={[
-          { key: 'entries', label: 'Entries' },
-          { key: 'analysis', label: 'Analysis' },
+          { key: 'entries', label: t('deck.tabs.entries') },
+          { key: 'analysis', label: t('deck.tabs.analysis') },
         ]}
       />
 
@@ -347,17 +361,17 @@ export function DeckDetailPage() {
         <section>
           <div className={`grid gap-8 sm:grid-cols-2 ${SECTION_GAP}`}>
             <div>
-              <h2 className="text-sm font-semibold text-fg">Strengths</h2>
+              <h2 className="text-sm font-semibold text-fg">{t('analysis.strengths')}</h2>
               {strengths.length === 0 ? (
-                <p className="mt-3 text-sm text-muted">No standout strengths yet.</p>
+                <p className="mt-3 text-sm text-muted">{t('analysis.noStrengths')}</p>
               ) : (
                 <ul className="mt-3 space-y-3">
                   {strengths.map(([key, value]) => {
-                    const caption = componentCaption(key, analysis)
+                    const caption = captionFor(key)
                     return (
                       <li key={key}>
                         <div className="flex items-baseline justify-between">
-                          <span className="text-sm text-fg">{COMPONENT_LABELS[key] ?? key}</span>
+                          <span className="text-sm text-fg">{t(`analysis.components.${key}`, key)}</span>
                           <span className="text-xs text-success">{value}</span>
                         </div>
                         {caption && <p className="text-xs text-muted">{caption}</p>}
@@ -368,27 +382,28 @@ export function DeckDetailPage() {
               )}
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-fg">Needs Attention</h2>
+              <h2 className="text-sm font-semibold text-fg">{t('analysis.weaknesses')}</h2>
               {!hasWeaknesses ? (
-                <p className="mt-3 text-sm text-muted">No significant weaknesses detected.</p>
+                <p className="mt-3 text-sm text-muted">{t('analysis.noWeaknesses')}</p>
               ) : (
                 <ul className="mt-3 space-y-3">
+                  {/* Mensagens já chegam traduzidas da API (código + argumentos viram frase lá). */}
                   {analysis.validation.errors.map((e, i) => (
-                    <li key={`err-${i}`} className="text-sm text-danger">
-                      {e}
+                    <li key={`err-${e.code}-${i}`} className="text-sm text-danger">
+                      {e.text}
                     </li>
                   ))}
                   {analysis.score.warnings.map((w, i) => (
-                    <li key={`warn-${i}`} className="text-sm text-warning">
-                      {w}
+                    <li key={`warn-${w.code}-${i}`} className="text-sm text-warning">
+                      {w.text}
                     </li>
                   ))}
                   {weakComponents.map(([key, value]) => {
-                    const caption = componentCaption(key, analysis)
+                    const caption = captionFor(key)
                     return (
                       <li key={key}>
                         <div className="flex items-baseline justify-between">
-                          <span className="text-sm text-fg">{COMPONENT_LABELS[key] ?? key}</span>
+                          <span className="text-sm text-fg">{t(`analysis.components.${key}`, key)}</span>
                           <span className="text-xs text-warning">{value}</span>
                         </div>
                         {caption && <p className="text-xs text-muted">{caption}</p>}
@@ -402,22 +417,22 @@ export function DeckDetailPage() {
 
           <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
             <div>
-              <h3 className="mb-3 text-sm font-medium text-muted">Mana Curve</h3>
+              <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.manaCurve')}</h3>
               <ManaCurveChart manaCurve={analysis.manaCurve} />
             </div>
 
             <div>
-              <h3 className="mb-3 text-sm font-medium text-muted">Color Distribution</h3>
+              <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.colorDistribution')}</h3>
               <ColorDistributionChart colorDistribution={analysis.colorDistribution} />
             </div>
 
             <div>
-              <h3 className="mb-3 text-sm font-medium text-muted">Type Distribution</h3>
+              <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.typeDistribution')}</h3>
               <TypeDistributionChart typeDistribution={analysis.typeDistribution} />
             </div>
 
             <div>
-              <h3 className="mb-3 text-sm font-medium text-muted">Format Validation</h3>
+              <h3 className="mb-3 text-sm font-medium text-muted">{t('analysis.charts.validation')}</h3>
               <ValidationList validation={analysis.validation} />
             </div>
           </div>
@@ -429,12 +444,10 @@ export function DeckDetailPage() {
       {activeTab === 'entries' && (
         <section>
           <h2 className="text-sm font-semibold text-fg">
-            Entries ({deck.mainDeckCount} main
-            {deck.sideboardCount > 0 ? `, ${deck.sideboardCount} sideboard` : ''}
-            {deck.maybeboardCount > 0 ? `, ${deck.maybeboardCount} maybeboard` : ''})
+            {t('deck.entries.heading', { counts: entryCounts })}
           </h2>
           <p className="mb-4 text-xs text-muted">
-            Add, move, or remove cards. Estimated value: ${totalValueUsd.toFixed(2)}
+            {t('deck.entries.subtitle', { value: usd.format(totalValueUsd) })}
           </p>
 
           <AddCardToDeckForm onAdd={handleAddCard} />
@@ -442,7 +455,7 @@ export function DeckDetailPage() {
 
           {commanderEntries.length > 0 && (
             <EntryGroup
-              title="Commander"
+              title={t('sections.Commander')}
               section="Commander"
               entries={commanderEntries}
               onRemove={handleRemoveEntry}
@@ -450,7 +463,7 @@ export function DeckDetailPage() {
             />
           )}
           <EntryGroup
-            title="Main Deck"
+            title={t('sections.Main')}
             section="Main"
             entries={mainEntries}
             groupByType
@@ -459,7 +472,7 @@ export function DeckDetailPage() {
           />
           {sideboardEntries.length > 0 && (
             <EntryGroup
-              title="Sideboard"
+              title={t('sections.Sideboard')}
               section="Sideboard"
               entries={sideboardEntries}
               onRemove={handleRemoveEntry}
@@ -468,9 +481,9 @@ export function DeckDetailPage() {
           )}
           {maybeboardEntries.length > 0 && (
             <EntryGroup
-              title="Maybeboard"
+              title={t('sections.Maybeboard')}
               section="Maybeboard"
-              caption="not counted in analysis"
+              caption={t('deck.entries.maybeboardCaption')}
               entries={maybeboardEntries}
               onRemove={handleRemoveEntry}
               onMove={handleMoveEntry}
@@ -513,6 +526,7 @@ function AddCardToDeckForm({
 }: {
   onAdd: (cardName: string, quantity: number, section: DeckSection) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [cardName, setCardName] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [section, setSection] = useState<DeckSection>('Main')
@@ -523,6 +537,7 @@ function AddCardToDeckForm({
     if (!cardName.trim()) return
     setIsSubmitting(true)
     try {
+      // O nome digitado vai como está: a API resolve tanto o nome em inglês quanto o traduzido.
       await onAdd(cardName.trim(), quantity, section)
       setCardName('')
       setQuantity(1)
@@ -535,19 +550,19 @@ function AddCardToDeckForm({
     <form onSubmit={handleSubmit} className="mb-4 flex flex-wrap items-end gap-2">
       <div className="flex-1 basis-40">
         <label className="mb-1 block text-xs text-muted" htmlFor="add-card-name">
-          Add a card
+          {t('deck.entries.addCard')}
         </label>
         <input
           id="add-card-name"
           value={cardName}
           onChange={(e) => setCardName(e.target.value)}
-          placeholder="Card name"
+          placeholder={t('deck.entries.cardNamePlaceholder')}
           className={`${INPUT_CLASS} text-sm`}
         />
       </div>
       <div className="w-16">
         <label className="mb-1 block text-xs text-muted" htmlFor="add-card-qty">
-          Qty
+          {t('deck.entries.quantity')}
         </label>
         <input
           id="add-card-qty"
@@ -560,7 +575,7 @@ function AddCardToDeckForm({
       </div>
       <div className="w-32">
         <label className="mb-1 block text-xs text-muted" htmlFor="add-card-section">
-          Section
+          {t('deck.entries.section')}
         </label>
         <select
           id="add-card-section"
@@ -570,13 +585,13 @@ function AddCardToDeckForm({
         >
           {SECTIONS.map((s) => (
             <option key={s} value={s} className="bg-surface text-fg">
-              {s}
+              {t(`sections.${s}`)}
             </option>
           ))}
         </select>
       </div>
       <button type="submit" disabled={isSubmitting} className={PRIMARY_BUTTON_CLASS}>
-        {isSubmitting ? 'Adding…' : 'Add'}
+        {isSubmitting ? t('deck.entries.adding') : t('deck.entries.add')}
       </button>
     </form>
   )
@@ -599,6 +614,8 @@ function EntryGroup({
   onRemove: (cardName: string, section: DeckSection) => Promise<void>
   onMove: (cardName: string, quantity: number, fromSection: DeckSection, toSection: DeckSection) => Promise<void>
 }) {
+  const { t } = useTranslation()
+
   if (entries.length === 0) return null
 
   const otherSections = SECTIONS.filter((s) => s !== section)
@@ -614,8 +631,10 @@ function EntryGroup({
           {groupByCategory(entries).map(({ category, entries: categoryEntries }) => (
             <div key={category} className="mb-3 break-inside-avoid-column">
               <h4 className="mb-0.5 text-xs text-muted">
-                {CATEGORY_LABELS[category] ?? category} (
-                {categoryEntries.reduce((sum, e) => sum + e.quantity, 0)})
+                {t('deck.entries.categoryCount', {
+                  category: t(`cardTypes.${category}`, category),
+                  count: categoryEntries.reduce((sum, e) => sum + e.quantity, 0),
+                })}
               </h4>
               <EntryList
                 entries={categoryEntries}
@@ -684,6 +703,9 @@ function EntryRow({
   onRemove: (cardName: string, section: DeckSection) => Promise<void>
   onMove: (cardName: string, moveQuantity: number, fromSection: DeckSection, toSection: DeckSection) => Promise<void>
 }) {
+  const { t } = useTranslation()
+  const { usd } = useFormatters()
+
   // A single copy can just move — nothing to choose. With 2+ copies, ask how many, defaulting
   // to "all" so the common case is still one click, but a partial move is just as easy.
   const [pendingTarget, setPendingTarget] = useState<DeckSection | null>(null)
@@ -695,6 +717,8 @@ function EntryRow({
   // don't have hover, so a tap toggles this state instead, and a tap outside the row closes it.
   const [revealed, setRevealed] = useState(false)
   const rowRef = useRef<HTMLLIElement>(null)
+
+  const name = displayName(entry)
 
   useEffect(() => {
     if (!revealed) return
@@ -711,6 +735,7 @@ function EntryRow({
     if (e.pointerType === 'touch') setRevealed((r) => !r)
   }
 
+  // As ações falam com a API pelo nome canônico (entry.cardName), não pelo nome exibido.
   function handleSelectTarget(target: DeckSection) {
     if (entry.quantity <= 1) {
       void onMove(entry.cardName, entry.quantity, section, target)
@@ -733,43 +758,45 @@ function EntryRow({
       className="group flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm hover:bg-surface-hover"
     >
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-        <span className="truncate text-fg" title={entry.cardName}>
-          {entry.cardName}
+        <span className="truncate text-fg" title={name}>
+          {name}
         </span>
         <span className="shrink-0 text-xs text-muted">×{entry.quantity}</span>
       </span>
 
       <span className="flex shrink-0 items-center gap-2 text-xs text-muted tabular-nums">
         <ManaCost manaCost={entry.manaCost} />
-        <span className="w-14 text-right" title="Price (USD)">
-          {entry.priceUsd != null ? `$${entry.priceUsd.toFixed(2)}` : '—'}
+        <span className="w-16 text-right" title={t('deck.entries.price')}>
+          {entry.priceUsd != null ? usd.format(entry.priceUsd) : '—'}
         </span>
       </span>
 
       {pendingTarget ? (
         <div className="flex flex-shrink-0 flex-wrap items-center justify-end gap-1.5">
-          <span className="text-xs text-muted">Move</span>
+          <span className="text-xs text-muted">{t('deck.entries.move')}</span>
           <input
             type="number"
-            aria-label={`Quantity of ${entry.cardName} to move`}
+            aria-label={t('deck.entries.moveQuantityLabel', { card: name })}
             min={1}
             max={entry.quantity}
             value={moveQty}
             onChange={(e) => setMoveQty(Math.min(entry.quantity, Math.max(1, Number(e.target.value))))}
             className="w-12 rounded border border-border bg-surface px-1 py-0.5 text-xs text-fg"
           />
-          <span className="text-xs text-muted">to {pendingTarget}</span>
+          <span className="text-xs text-muted">
+            {t('deck.entries.moveToSection', { section: t(`sections.${pendingTarget}`) })}
+          </span>
           <button
             onClick={handleConfirmMove}
             className="rounded px-1.5 py-0.5 text-xs font-medium text-accent-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            Move
+            {t('deck.entries.move')}
           </button>
           <button
             onClick={() => setPendingTarget(null)}
             className="rounded px-1.5 py-0.5 text-xs text-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       ) : (
@@ -781,7 +808,7 @@ function EntryRow({
         >
           <div className="flex min-w-0 items-center gap-1 overflow-hidden">
             <select
-              aria-label={`Move ${entry.cardName}`}
+              aria-label={t('deck.entries.moveCardLabel', { card: name })}
               defaultValue=""
               onChange={(e) => {
                 const target = e.target.value as DeckSection
@@ -791,17 +818,17 @@ function EntryRow({
               className="rounded bg-transparent px-1 py-0.5 text-xs text-muted hover:text-fg"
             >
               <option value="" disabled className="bg-surface text-fg">
-                Move to…
+                {t('deck.entries.moveTo')}
               </option>
               {otherSections.map((s) => (
                 <option key={s} value={s} className="bg-surface text-fg">
-                  {s}
+                  {t(`sections.${s}`)}
                 </option>
               ))}
             </select>
             <button
               onClick={() => void onRemove(entry.cardName, section)}
-              aria-label={`Remove ${entry.cardName}`}
+              aria-label={t('deck.entries.removeCardLabel', { card: name })}
               className="rounded p-1 text-muted transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <TrashIcon />

@@ -1,0 +1,209 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{total}}",
+    "email": "Email",
+    "password": "Password"
+  },
+  "nav": {
+    "brand": "MTG Deck Lab",
+    "myDecks": "My Decks",
+    "importDeck": "Import Deck",
+    "logOut": "Log out",
+    "language": "Language"
+  },
+  "sections": {
+    "Main": "Main Deck",
+    "Commander": "Commander",
+    "Sideboard": "Sideboard",
+    "Maybeboard": "Maybeboard"
+  },
+  "cardTypes": {
+    "Creature": "Creatures",
+    "Planeswalker": "Planeswalkers",
+    "Battle": "Battles",
+    "Instant": "Instants",
+    "Sorcery": "Sorceries",
+    "Artifact": "Artifacts",
+    "Enchantment": "Enchantments",
+    "Tribal": "Tribals",
+    "Land": "Lands",
+    "Other": "Other"
+  },
+  "colors": {
+    "White": "White",
+    "Blue": "Blue",
+    "Black": "Black",
+    "Red": "Red",
+    "Green": "Green",
+    "Colorless": "Colorless",
+    "Multicolor": "Multicolor"
+  },
+  "lands": {
+    "Plains": "Plains",
+    "Island": "Island",
+    "Swamp": "Swamp",
+    "Mountain": "Mountain",
+    "Forest": "Forest",
+    "Colorless": "Colorless",
+    "Nonbasic": "Nonbasic"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "noAccount": "No account?",
+      "registerLink": "Register",
+      "error": "Invalid email or password."
+    },
+    "register": {
+      "title": "Create account",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "error": "Could not create account."
+    }
+  },
+  "deckList": {
+    "title": "My Decks",
+    "importCta": "Import Deck",
+    "error": "Could not load your decks.",
+    "empty": {
+      "title": "Analyze your deck",
+      "description": "Paste a decklist to see its mana curve, color balance, and format legality in seconds.",
+      "cta": "Import a deck"
+    },
+    "counts": "{{main}} main · {{sideboard}} sideboard"
+  },
+  "import": {
+    "title": "Import Deck",
+    "subtitle": "Paste a decklist to see its mana curve, color balance, and legality.",
+    "deckName": "Deck name",
+    "format": "Format",
+    "commander": "Commander",
+    "commanderPlaceholder": "1 Atraxa, Praetors' Voice",
+    "description": "Description (optional)",
+    "mainDeck": "Main Deck",
+    "mainDeckPlaceholder": "4 Lightning Bolt\n20 Mountain",
+    "mainDeckHint": "One card per line — e.g. \"4 Lightning Bolt\". Paste a full multi-section list here and SB:/#Commander tags still work.",
+    "languageHint": "Card names work in English or Portuguese.",
+    "addOptional": "+ Add sideboard or maybeboard cards",
+    "sideboard": "Sideboard",
+    "sideboardPlaceholder": "2 Duress",
+    "maybeboard": "Maybeboard",
+    "maybeboardPlaceholder": "1 Rhystic Study",
+    "maybeboardHint": "Cards you're considering but haven't committed to — excluded from score, curve, and validation.",
+    "unresolved": "Not found in {{section}}: {{cards}}",
+    "continueToDeck": "Continue to deck",
+    "submit": "Import Deck",
+    "submitting": "Importing…",
+    "error": "Could not import deck."
+  },
+  "deck": {
+    "notFound": "Deck not found.",
+    "nameLabel": "Deck name",
+    "descriptionLabel": "Description",
+    "deleteConfirm": "Delete this deck? This cannot be undone.",
+    "errors": {
+      "update": "Could not update deck.",
+      "delete": "Could not delete deck.",
+      "addCard": "Could not find card \"{{card}}\".",
+      "removeCard": "Could not remove card.",
+      "moveCard": "Could not move card."
+    },
+    "tabs": {
+      "entries": "Entries",
+      "analysis": "Analysis"
+    },
+    "entries": {
+      "heading": "Entries ({{counts}})",
+      "countMain": "{{count}} main",
+      "countSideboard": "{{count}} sideboard",
+      "countMaybeboard": "{{count}} maybeboard",
+      "subtitle": "Add, move, or remove cards. Estimated value: {{value}}",
+      "maybeboardCaption": "not counted in analysis",
+      "categoryCount": "{{category}} ({{count}})",
+      "addCard": "Add a card",
+      "cardNamePlaceholder": "Card name",
+      "quantity": "Qty",
+      "section": "Section",
+      "add": "Add",
+      "adding": "Adding…",
+      "price": "Price",
+      "move": "Move",
+      "moveTo": "Move to…",
+      "moveToSection": "to {{section}}",
+      "moveQuantityLabel": "Quantity of {{card}} to move",
+      "moveCardLabel": "Move {{card}}",
+      "removeCardLabel": "Remove {{card}}"
+    }
+  },
+  "analysis": {
+    "loading": "Loading analysis…",
+    "error": "Could not load analysis.",
+    "strengths": "Strengths",
+    "noStrengths": "No standout strengths yet.",
+    "weaknesses": "Needs Attention",
+    "noWeaknesses": "No significant weaknesses detected.",
+    "verdict": {
+      "illegal_one": "This deck currently breaks {{format}} rules — {{count}} issue to fix before it's legal.",
+      "illegal_other": "This deck currently breaks {{format}} rules — {{count}} issues to fix before it's legal.",
+      "legalWithWarnings_one": "Legal for {{format}}, with {{count}} area worth reviewing below.",
+      "legalWithWarnings_other": "Legal for {{format}}, with {{count}} areas worth reviewing below.",
+      "legal": "Legal for {{format}} with no issues detected."
+    },
+    "components": {
+      "ManaCurve": "Mana Curve",
+      "LandRatio": "Land Ratio",
+      "ColorConsistency": "Color Consistency",
+      "RuleCompliance": "Format Legality"
+    },
+    "captions": {
+      "averageCmc": "Average CMC {{value}}",
+      "landsOfTotal_one": "{{count}} land of {{total}}",
+      "landsOfTotal_other": "{{count}} lands of {{total}}",
+      "colorless": "Colorless",
+      "colorCount_one": "{{count}} color",
+      "colorCount_other": "{{count}} colors",
+      "noViolations": "No rule violations",
+      "violations_one": "{{count}} rule violation",
+      "violations_other": "{{count}} rule violations"
+    },
+    "charts": {
+      "manaCurve": "Mana Curve",
+      "colorDistribution": "Color Distribution",
+      "typeDistribution": "Type Distribution",
+      "validation": "Format Validation",
+      "cards": "Cards",
+      "manaValue": "Mana value {{value}}",
+      "averageCmc": "Average CMC",
+      "peak": "Peak",
+      "nonLandCards": "Non-land cards",
+      "emptyManaCurve": "No non-land cards to chart yet.",
+      "emptyColors": "This deck has no colored cards.",
+      "emptyTypes": "No cards to chart yet.",
+      "colorFootnote": "Cards count once per color they contain, so gold cards appear in several rows — <0>Multicolor</0> tallies cards with two or more colors.",
+      "landsFootnote": "Hover the Lands bar to break it down by basic color and nonbasic."
+    },
+    "validation": {
+      "noIssues": "No issues detected."
+    },
+    "score": {
+      "outOf": "/ 100",
+      "A": { "label": "Excellent", "description": "Strong fundamentals across the board." },
+      "B": { "label": "Good", "description": "Solid deck with minor gaps." },
+      "C": { "label": "Fair", "description": "Playable, but several areas need attention." },
+      "D": { "label": "Weak", "description": "Significant issues affecting consistency." },
+      "F": { "label": "Poor", "description": "Major structural problems to address." }
+    }
+  }
+}

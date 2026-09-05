@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../api/client'
 
@@ -7,6 +8,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +23,8 @@ export function LoginPage() {
       const from = (location.state as { from?: Location })?.from?.pathname ?? '/'
       navigate(from, { replace: true })
     } catch (err) {
-      setError(extractErrorMessage(err, 'Invalid email or password.'))
+      // A API já responde no idioma do request; o texto local só cobre falha de rede.
+      setError(extractErrorMessage(err, t('auth.login.error')))
     } finally {
       setIsSubmitting(false)
     }
@@ -29,11 +32,11 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto mt-16 max-w-sm px-4">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-fg">Log in</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-fg">{t('auth.login.title')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm text-muted" htmlFor="email">
-            Email
+            {t('common.email')}
           </label>
           <input
             id="email"
@@ -46,7 +49,7 @@ export function LoginPage() {
         </div>
         <div>
           <label className="mb-1 block text-sm text-muted" htmlFor="password">
-            Password
+            {t('common.password')}
           </label>
           <input
             id="password"
@@ -63,13 +66,13 @@ export function LoginPage() {
           disabled={isSubmitting}
           className="w-full rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
-          {isSubmitting ? 'Logging in…' : 'Log in'}
+          {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
         </button>
       </form>
       <p className="mt-4 text-sm text-muted">
-        No account?{' '}
+        {t('auth.login.noAccount')}{' '}
         <Link to="/register" className="text-accent-strong hover:underline">
-          Register
+          {t('auth.login.registerLink')}
         </Link>
       </p>
     </div>

@@ -29,6 +29,11 @@ services:
       Admin__Emails: ${ADMIN_EMAILS:-}
       Scryfall__ScheduledSyncEnabled: ${SCRYFALL_SCHEDULED_SYNC_ENABLED:-true}
       Scryfall__SyncIntervalHours: ${SCRYFALL_SYNC_INTERVAL_HOURS:-24}
+      Scryfall__Translations__Enabled: ${SCRYFALL_TRANSLATIONS_ENABLED:-false}
+      Scryfall__Translations__Languages: ${SCRYFALL_TRANSLATIONS_LANGUAGES:-pt}
+      Scryfall__Translations__SyncIntervalHours: ${SCRYFALL_TRANSLATIONS_SYNC_INTERVAL_HOURS:-168}
+      Localization__DefaultCulture: ${LOCALIZATION_DEFAULT_CULTURE:-en-US}
+      Localization__SupportedCultures: ${LOCALIZATION_SUPPORTED_CULTURES:-en-US,pt-BR}
     ports:
       - "8080:8080"
     depends_on:

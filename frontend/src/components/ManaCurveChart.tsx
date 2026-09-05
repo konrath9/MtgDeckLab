@@ -1,30 +1,38 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useTranslation } from 'react-i18next'
 import type { ManaCurve } from '../api/types'
 import { CHART, ChartTooltip, axisTick } from './chartTheme'
+import { useFormatters } from '../i18n/format'
 
 const BAR_COLOR = '#3f6fd1'
 const PEAK_COLOR = '#5e8ee8'
 
 export function ManaCurveChart({ manaCurve }: { manaCurve: ManaCurve }) {
+  const { t } = useTranslation()
+  const { twoDecimals } = useFormatters()
+
   const data = Object.entries(manaCurve.distribution)
     .map(([cmc, count]) => ({ cmc: Number(cmc), count }))
     .sort((a, b) => a.cmc - b.cmc)
 
   if (data.length === 0) {
-    return <p className="text-sm text-muted">No non-land cards to chart yet.</p>
+    return <p className="text-sm text-muted">{t('analysis.charts.emptyManaCurve')}</p>
   }
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted">
         <span>
-          Average CMC <strong className="ml-1 text-sm text-fg tabular-nums">{manaCurve.averageCmc.toFixed(2)}</strong>
+          {t('analysis.charts.averageCmc')}{' '}
+          <strong className="ml-1 text-sm text-fg tabular-nums">{twoDecimals.format(manaCurve.averageCmc)}</strong>
         </span>
         <span>
-          Peak <strong className="ml-1 text-sm text-fg tabular-nums">{manaCurve.peakCmc}</strong>
+          {t('analysis.charts.peak')}{' '}
+          <strong className="ml-1 text-sm text-fg tabular-nums">{manaCurve.peakCmc}</strong>
         </span>
         <span>
-          Non-land cards <strong className="ml-1 text-sm text-fg tabular-nums">{manaCurve.totalNonLandCards}</strong>
+          {t('analysis.charts.nonLandCards')}{' '}
+          <strong className="ml-1 text-sm text-fg tabular-nums">{manaCurve.totalNonLandCards}</strong>
         </span>
       </div>
       <ResponsiveContainer width="100%" height={200}>
@@ -50,9 +58,13 @@ export function ManaCurveChart({ manaCurve }: { manaCurve: ManaCurve }) {
           <YAxis allowDecimals={false} stroke={CHART.axis} tickLine={false} axisLine={false} tick={axisTick} />
           <Tooltip
             cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-            content={<ChartTooltip labelFormatter={(v) => `Mana value ${v === 7 ? '7+' : v}`} />}
+            content={
+              <ChartTooltip
+                labelFormatter={(v) => t('analysis.charts.manaValue', { value: v === 7 ? '7+' : v })}
+              />
+            }
           />
-          <Bar dataKey="count" name="Cards" radius={[5, 5, 0, 0]} maxBarSize={38}>
+          <Bar dataKey="count" name={t('analysis.charts.cards')} radius={[5, 5, 0, 0]} maxBarSize={38}>
             <LabelList dataKey="count" position="top" fill={CHART.tick} fontSize={10} />
             {data.map((entry) => (
               <Cell

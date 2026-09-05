@@ -1,16 +1,21 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Trans, useTranslation } from 'react-i18next'
 import type { Color, ColorDistribution } from '../api/types'
 import { CHART, ChartTooltip, MANA_COLORS, RAINBOW_STOPS, axisTick } from './chartTheme'
 
 const COLOR_ORDER: Color[] = ['White', 'Blue', 'Black', 'Red', 'Green', 'Colorless']
-const MULTICOLOR_LABEL = 'Multicolor'
 const MULTICOLOR_GRADIENT_ID = 'colorDist-multicolor'
 
-type Row = { label: string; count: number; fill: string; gradientId: string; isMulticolor?: boolean }
+// `key` é o valor da API (estável, usado para cor/gradiente); `label` é o texto traduzido que
+// aparece no eixo.
+type Row = { key: string; label: string; count: number; fill: string; gradientId: string; isMulticolor?: boolean }
 
 export function ColorDistributionChart({ colorDistribution }: { colorDistribution: ColorDistribution }) {
+  const { t } = useTranslation()
+
   const colorRows: Row[] = COLOR_ORDER.map((color) => ({
-    label: color,
+    key: color,
+    label: t(`colors.${color}`),
     count: colorDistribution.cardCount[color] ?? 0,
     fill: MANA_COLORS[color],
     gradientId: `colorDist-${color}`,
@@ -21,7 +26,8 @@ export function ColorDistributionChart({ colorDistribution }: { colorDistributio
       ? [
           ...colorRows,
           {
-            label: MULTICOLOR_LABEL,
+            key: 'Multicolor',
+            label: t('colors.Multicolor'),
             count: colorDistribution.multicolorCount,
             // Not one of the five colors — the bar itself spans all of them instead.
             fill: MANA_COLORS.Colorless,
@@ -32,7 +38,7 @@ export function ColorDistributionChart({ colorDistribution }: { colorDistributio
       : colorRows
 
   if (colorDistribution.isColorless || rows.length === 0) {
-    return <p className="text-sm text-muted">This deck has no colored cards.</p>
+    return <p className="text-sm text-muted">{t('analysis.charts.emptyColors')}</p>
   }
 
   return (
@@ -72,17 +78,16 @@ export function ColorDistributionChart({ colorDistribution }: { colorDistributio
             tick={axisTick}
           />
           <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<ChartTooltip />} />
-          <Bar dataKey="count" name="Cards" radius={[0, 5, 5, 0]} maxBarSize={20}>
+          <Bar dataKey="count" name={t('analysis.charts.cards')} radius={[0, 5, 5, 0]} maxBarSize={20}>
             <LabelList dataKey="count" position="right" fill={CHART.tick} fontSize={10} />
             {rows.map((row) => (
-              <Cell key={row.label} fill={`url(#${row.gradientId})`} />
+              <Cell key={row.key} fill={`url(#${row.gradientId})`} />
             ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
       <p className="mt-2 text-xs text-muted">
-        Cards count once per color they contain, so gold cards appear in several rows —{' '}
-        <span className="text-fg">Multicolor</span> tallies cards with two or more colors.
+        <Trans i18nKey="analysis.charts.colorFootnote" components={[<span key="multicolor" className="text-fg" />]} />
       </p>
     </div>
   )

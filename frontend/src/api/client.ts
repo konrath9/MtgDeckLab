@@ -1,4 +1,5 @@
 import axios from 'axios'
+import i18n from '../i18n'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5052/api'
 
@@ -17,9 +18,12 @@ export function setStoredToken(token: string | null) {
   else localStorage.removeItem(TOKEN_STORAGE_KEY)
 }
 
+// O idioma da UI viaja em toda requisição: a API responde mensagens de análise e de erro já
+// traduzidas, e resolve nome de carta no idioma certo, sem cada chamada precisar passar isso.
 apiClient.interceptors.request.use((config) => {
   const token = getStoredToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  config.headers['Accept-Language'] = i18n.language
   return config
 })
 

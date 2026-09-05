@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { extractErrorMessage } from '../api/client'
 
 export function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -19,7 +21,7 @@ export function RegisterPage() {
       await register(email, password)
       navigate('/', { replace: true })
     } catch (err) {
-      setError(extractErrorMessage(err, 'Could not create account.'))
+      setError(extractErrorMessage(err, t('auth.register.error')))
     } finally {
       setIsSubmitting(false)
     }
@@ -27,11 +29,11 @@ export function RegisterPage() {
 
   return (
     <div className="mx-auto mt-16 max-w-sm px-4">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-fg">Create account</h1>
+      <h1 className="mb-6 text-2xl font-semibold tracking-tight text-fg">{t('auth.register.title')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm text-muted" htmlFor="email">
-            Email
+            {t('common.email')}
           </label>
           <input
             id="email"
@@ -44,7 +46,7 @@ export function RegisterPage() {
         </div>
         <div>
           <label className="mb-1 block text-sm text-muted" htmlFor="password">
-            Password
+            {t('common.password')}
           </label>
           <input
             id="password"
@@ -62,13 +64,13 @@ export function RegisterPage() {
           disabled={isSubmitting}
           className="w-full rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
-          {isSubmitting ? 'Creating account…' : 'Create account'}
+          {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
         </button>
       </form>
       <p className="mt-4 text-sm text-muted">
-        Already have an account?{' '}
+        {t('auth.register.haveAccount')}{' '}
         <Link to="/login" className="text-accent-strong hover:underline">
-          Log in
+          {t('auth.register.loginLink')}
         </Link>
       </p>
     </div>

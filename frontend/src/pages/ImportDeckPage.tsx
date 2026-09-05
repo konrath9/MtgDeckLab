@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ALL_FORMATS, importDeck } from '../api/decks'
 import type { DeckSection, Format, UnresolvedCardName } from '../api/types'
 import { extractErrorMessage } from '../api/client'
@@ -7,15 +8,9 @@ import { extractErrorMessage } from '../api/client'
 const INPUT_CLASS =
   'w-full rounded-md border border-border bg-surface px-3 py-2 text-fg transition-colors focus:border-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50'
 
-const SECTION_LABELS: Record<DeckSection, string> = {
-  Main: 'Main Deck',
-  Commander: 'Commander',
-  Sideboard: 'Sideboard',
-  Maybeboard: 'Maybeboard',
-}
-
 export function ImportDeckPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [format, setFormat] = useState<Format>('Commander')
   const [description, setDescription] = useState('')
@@ -49,7 +44,7 @@ export function ImportDeckPage() {
         navigate(`/decks/${result.deckId}`)
       }
     } catch (err) {
-      setError(extractErrorMessage(err, 'Could not import deck.'))
+      setError(extractErrorMessage(err, t('import.error')))
     } finally {
       setIsSubmitting(false)
     }
@@ -64,15 +59,15 @@ export function ImportDeckPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-fg">Import Deck</h1>
-      <p className="mb-6 text-sm text-muted">Paste a decklist to see its mana curve, color balance, and legality.</p>
+      <h1 className="mb-1 text-2xl font-semibold tracking-tight text-fg">{t('import.title')}</h1>
+      <p className="mb-6 text-sm text-muted">{t('import.subtitle')}</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Identity — small, secondary fields, deliberately quiet */}
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="mb-1 block text-xs text-muted" htmlFor="name">
-              Deck name
+              {t('import.deckName')}
             </label>
             <input
               id="name"
@@ -84,7 +79,7 @@ export function ImportDeckPage() {
           </div>
           <div className="w-40">
             <label className="mb-1 block text-xs text-muted" htmlFor="format">
-              Format
+              {t('import.format')}
             </label>
             <select
               id="format"
@@ -104,13 +99,13 @@ export function ImportDeckPage() {
         {format === 'Commander' && (
           <div>
             <label className="mb-1 block text-xs text-muted" htmlFor="commanderDecklist">
-              Commander
+              {t('import.commander')}
             </label>
             <input
               id="commanderDecklist"
               value={commanderDecklist}
               onChange={(e) => setCommanderDecklist(e.target.value)}
-              placeholder={"1 Atraxa, Praetors' Voice"}
+              placeholder={t('import.commanderPlaceholder')}
               className={`${INPUT_CLASS} font-mono text-sm`}
             />
           </div>
@@ -118,7 +113,7 @@ export function ImportDeckPage() {
 
         <div>
           <label className="mb-1 block text-xs text-muted" htmlFor="description">
-            Description (optional)
+            {t('import.description')}
           </label>
           <input
             id="description"
@@ -131,7 +126,7 @@ export function ImportDeckPage() {
         {/* Main Deck — the one required action, visually the largest and strongest thing here */}
         <div>
           <label className="mb-1 block text-sm font-medium text-fg" htmlFor="mainDecklist">
-            Main Deck
+            {t('import.mainDeck')}
           </label>
           <textarea
             id="mainDecklist"
@@ -139,12 +134,11 @@ export function ImportDeckPage() {
             rows={16}
             value={mainDecklist}
             onChange={(e) => setMainDecklist(e.target.value)}
-            placeholder={'4 Lightning Bolt\n20 Mountain'}
+            placeholder={t('import.mainDeckPlaceholder')}
             className={`${INPUT_CLASS} font-mono text-sm`}
           />
           <p className="mt-1 text-xs text-muted">
-            One card per line — e.g. "4 Lightning Bolt". Paste a full multi-section list here and
-            SB:/#Commander tags still work.
+            {t('import.mainDeckHint')} {t('import.languageHint')}
           </p>
         </div>
 
@@ -155,39 +149,36 @@ export function ImportDeckPage() {
             onClick={() => setShowOptional(true)}
             className="text-sm text-accent-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            + Add sideboard or maybeboard cards
+            {t('import.addOptional')}
           </button>
         ) : (
           <div className="space-y-4 border-l-2 border-border pl-4">
             <div>
               <label className="mb-1 block text-xs text-muted" htmlFor="sideboardDecklist">
-                Sideboard
+                {t('import.sideboard')}
               </label>
               <textarea
                 id="sideboardDecklist"
                 rows={4}
                 value={sideboardDecklist}
                 onChange={(e) => setSideboardDecklist(e.target.value)}
-                placeholder={'2 Duress'}
+                placeholder={t('import.sideboardPlaceholder')}
                 className={`${INPUT_CLASS} font-mono text-sm`}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted" htmlFor="maybeboardDecklist">
-                Maybeboard
+                {t('import.maybeboard')}
               </label>
               <textarea
                 id="maybeboardDecklist"
                 rows={4}
                 value={maybeboardDecklist}
                 onChange={(e) => setMaybeboardDecklist(e.target.value)}
-                placeholder={'1 Rhystic Study'}
+                placeholder={t('import.maybeboardPlaceholder')}
                 className={`${INPUT_CLASS} font-mono text-sm`}
               />
-              <p className="mt-1 text-xs text-muted">
-                Cards you're considering but haven't committed to — excluded from score, curve, and
-                validation.
-              </p>
+              <p className="mt-1 text-xs text-muted">{t('import.maybeboardHint')}</p>
             </div>
           </div>
         )}
@@ -197,7 +188,10 @@ export function ImportDeckPage() {
           <div className="space-y-2 text-sm text-warning">
             {(Object.keys(unresolvedBySection) as DeckSection[]).map((section) => (
               <p key={section}>
-                Not found in {SECTION_LABELS[section]}: {unresolvedBySection[section]!.join(', ')}
+                {t('import.unresolved', {
+                  section: t(`sections.${section}`),
+                  cards: unresolvedBySection[section]!.join(', '),
+                })}
               </p>
             ))}
             {pendingDeckId && (
@@ -206,7 +200,7 @@ export function ImportDeckPage() {
                 onClick={() => navigate(`/decks/${pendingDeckId}`)}
                 className="rounded-md border border-border px-3 py-1.5 text-sm text-fg transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               >
-                Continue to deck
+                {t('import.continueToDeck')}
               </button>
             )}
           </div>
@@ -216,7 +210,7 @@ export function ImportDeckPage() {
           disabled={isSubmitting}
           className="rounded-md bg-accent px-4 py-2 font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
-          {isSubmitting ? 'Importing…' : 'Import Deck'}
+          {isSubmitting ? t('import.submitting') : t('import.submit')}
         </button>
       </form>
     </div>

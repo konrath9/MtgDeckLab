@@ -50,7 +50,9 @@ export interface DeckSummary {
 
 export interface DeckEntryDetail {
   cardId: string
+  // Nome canônico em inglês (chave de negócio). Para exibir: localizedName ?? cardName.
   cardName: string
+  localizedName: string | null
   quantity: number
   section: DeckSection
   types: CardType[]
@@ -117,17 +119,25 @@ export interface TypeDistribution {
   landBreakdown: Record<string, number>
 }
 
+// O Engine emite código + argumentos; a API devolve o texto já traduzido no idioma do request
+// (header Accept-Language) e mantém código e argumentos para quem quiser traduzir por conta própria.
+export interface LocalizedMessage {
+  code: string
+  text: string
+  args: Record<string, unknown>
+}
+
 export interface DeckScore {
   score: number
   grade: string
-  warnings: string[]
+  warnings: LocalizedMessage[]
   componentScores: Record<string, number>
 }
 
 export interface AnalysisValidationResult {
   isValid: boolean
-  errors: string[]
-  warnings: string[]
+  errors: LocalizedMessage[]
+  warnings: LocalizedMessage[]
 }
 
 // Campos além do escopo "núcleo" (roleDistribution, roleCoverage, manaBase, synergy) existem na

@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useTranslation } from 'react-i18next'
 import type { TypeDistribution } from '../api/types'
 import { CHART, ChartTooltip, MANA_COLORS, axisTick } from './chartTheme'
 
@@ -6,6 +7,7 @@ const TYPE_COLOR = '#3f6fd1'
 
 // The Lands row is split by basic-land color (plus nonbasic), so a mana base reads at a glance
 // instead of collapsing into one number. Order matters: it's the stacking order, left to right.
+// Estas chaves são as da API (landBreakdown) — o rótulo traduzido entra só na exibição.
 const LAND_BUCKETS = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Colorless', 'Nonbasic'] as const
 const LAND_BUCKET_COLORS: Record<string, string> = {
   Plains: MANA_COLORS.White,
@@ -28,19 +30,29 @@ type Row = {
 }
 
 export function TypeDistributionChart({ typeDistribution }: { typeDistribution: TypeDistribution }) {
+  const { t } = useTranslation()
+
   const landBreakdown = typeDistribution.landBreakdown ?? {}
   const activeLandBuckets = LAND_BUCKETS.filter((b) => (landBreakdown[b] ?? 0) > 0)
 
   const rows: Row[] = [
-    { type: 'Creatures', count: typeDistribution.creatures, total: typeDistribution.creatures },
-    { type: 'Planeswalkers', count: typeDistribution.planeswalkers, total: typeDistribution.planeswalkers },
-    { type: 'Instants', count: typeDistribution.instants, total: typeDistribution.instants },
-    { type: 'Sorceries', count: typeDistribution.sorceries, total: typeDistribution.sorceries },
-    { type: 'Artifacts', count: typeDistribution.artifacts, total: typeDistribution.artifacts },
-    { type: 'Enchantments', count: typeDistribution.enchantments, total: typeDistribution.enchantments },
-    { type: 'Other', count: typeDistribution.other, total: typeDistribution.other },
+    { type: t('cardTypes.Creature'), count: typeDistribution.creatures, total: typeDistribution.creatures },
     {
-      type: 'Lands',
+      type: t('cardTypes.Planeswalker'),
+      count: typeDistribution.planeswalkers,
+      total: typeDistribution.planeswalkers,
+    },
+    { type: t('cardTypes.Instant'), count: typeDistribution.instants, total: typeDistribution.instants },
+    { type: t('cardTypes.Sorcery'), count: typeDistribution.sorceries, total: typeDistribution.sorceries },
+    { type: t('cardTypes.Artifact'), count: typeDistribution.artifacts, total: typeDistribution.artifacts },
+    {
+      type: t('cardTypes.Enchantment'),
+      count: typeDistribution.enchantments,
+      total: typeDistribution.enchantments,
+    },
+    { type: t('cardTypes.Other'), count: typeDistribution.other, total: typeDistribution.other },
+    {
+      type: t('cardTypes.Land'),
       total: typeDistribution.lands,
       // Only non-zero buckets are set, so empty ones don't show up in the tooltip.
       ...Object.fromEntries(activeLandBuckets.map((b) => [b, landBreakdown[b]])),
@@ -48,7 +60,7 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
   ].filter((r) => r.total > 0)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted">No cards to chart yet.</p>
+    return <p className="text-sm text-muted">{t('analysis.charts.emptyTypes')}</p>
   }
 
   const lastBucket = activeLandBuckets[activeLandBuckets.length - 1]
@@ -82,7 +94,14 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
           />
           <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<ChartTooltip />} />
 
-          <Bar dataKey="count" name="Cards" stackId="a" fill="url(#typeDistBar)" radius={[0, 5, 5, 0]} maxBarSize={20}>
+          <Bar
+            dataKey="count"
+            name={t('analysis.charts.cards')}
+            stackId="a"
+            fill="url(#typeDistBar)"
+            radius={[0, 5, 5, 0]}
+            maxBarSize={20}
+          >
             <LabelList dataKey="count" position="right" fill={CHART.tick} fontSize={10} />
           </Bar>
 
@@ -90,7 +109,7 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
             <Bar
               key={bucket}
               dataKey={bucket}
-              name={bucket}
+              name={t(`lands.${bucket}`)}
               stackId="a"
               fill={`url(#typeDist-${bucket})`}
               maxBarSize={20}
@@ -104,7 +123,7 @@ export function TypeDistributionChart({ typeDistribution }: { typeDistribution: 
         </BarChart>
       </ResponsiveContainer>
       {activeLandBuckets.length > 0 && (
-        <p className="mt-2 text-xs text-muted">Hover the Lands bar to break it down by basic color and nonbasic.</p>
+        <p className="mt-2 text-xs text-muted">{t('analysis.charts.landsFootnote')}</p>
       )}
     </div>
   )
